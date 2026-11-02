@@ -2,13 +2,15 @@
 # frozen_string_literal: true
 
 # Plain checks on the port's non-widget code: the environment, the settings
-# store, the state bag, the tab list and the URL helpers. No display and no
-# main loop, so this runs in milliseconds.
+# store, the state bag, the tab list and the URL helpers. No main loop and no
+# widgets, so this runs in milliseconds — but `settings.rb` requires gtk4,
+# which will not load without a display, hence xvfb.
 #
 # The same-site cases are upstream's own, ported one for one from
-# src/utils.test.js.
+# src/utils.test.js. The full port of that file is spec/url_spec.rb; these are
+# kept because they run without the RSpec harness.
 #
-#   nix develop --command ruby test/check_models.rb
+#   nix develop --command xvfb-run -a ruby test/check_models.rb
 
 require 'tmpdir'
 

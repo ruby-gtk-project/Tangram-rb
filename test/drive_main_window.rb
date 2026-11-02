@@ -26,22 +26,22 @@ require_relative 'gtk_driver'
 deleted = []
 
 GtkDriver.drive(Tangram::Application.new, shots: 'tmp/shots') do |d, app|
-  d.window { app.window }
+  d.window { app.window.window }
 
   d.step('the window is up') do
-    d.check('window presented') { app.window.visible? }
-    d.check('titled Tangram') { app.window.title == 'Tangram' }
-    d.check('welcome page showing') { app.status_page.title == 'Welcome to Tangram' }
+    d.check('window presented') { app.window.window.visible? }
+    d.check('titled Tangram') { app.window.window.title == 'Tangram' }
+    d.check('the new-tab view is up on a first run') { app.window.view_new.status_page.title == 'Welcome to Tangram' }
     d.check('menu button carries the main menu') do
-      app.menu_button.menu_model.n_items == 2
+      app.window.view_tabs.menu_button_top.menu_model.n_items == 2
     end
     # GTK keeps default-width/height in step with the real size once the
     # window is on screen, which is what makes them the right pair to record.
     d.check('the geometry is recorded for the next run') do
-      app.settings.remember_window_state(app.window)
-      app.settings.get_int('window-width') == app.window.default_width &&
-        app.settings.get_int('window-height') == app.window.default_height &&
-        app.settings.get_boolean('window-maximized') == false
+      app.window.settings.remember_window_state(app.window.window)
+      app.window.settings.get_int('window-width') == app.window.window.default_width &&
+        app.window.settings.get_int('window-height') == app.window.window.default_height &&
+        app.window.settings.get_boolean('window-maximized') == false
     end
     d.shot('01-window')
   end
@@ -51,15 +51,15 @@ GtkDriver.drive(Tangram::Application.new, shots: 'tmp/shots') do |d, app|
   end
 
   d.step('the about dialog is on screen') do
-    d.check('a dialog is visible') { !app.window.visible_dialog.nil? }
+    d.check('a dialog is visible') { !app.window.window.visible_dialog.nil? }
     d.check('it is the about dialog') do
-      app.window.visible_dialog == app.about_dialog.dialog
+      app.window.window.visible_dialog == app.window.actions.about_dialog.dialog
     end
     d.check('debug info lists the engines') do
-      app.about_dialog.debug_info.lines.length == 6
+      app.window.actions.about_dialog.debug_info.lines.length == 6
     end
     d.shot('02-about')
-    app.window.visible_dialog&.close
+    app.window.window.visible_dialog&.close
   end
 
   d.step('the shortcuts dialog opens') do
@@ -68,10 +68,10 @@ GtkDriver.drive(Tangram::Application.new, shots: 'tmp/shots') do |d, app|
 
   d.step('the shortcuts dialog is on screen') do
     d.check('it is the shortcuts dialog') do
-      app.window.visible_dialog == app.shortcuts_dialog.dialog
+      app.window.window.visible_dialog == app.window.actions.shortcuts_dialog.dialog
     end
     d.shot('03-shortcuts')
-    app.window.visible_dialog&.close
+    app.window.window.visible_dialog&.close
   end
 
   d.step('the tabs bar toggle writes the setting') do
@@ -79,7 +79,7 @@ GtkDriver.drive(Tangram::Application.new, shots: 'tmp/shots') do |d, app|
       d.check('starts on, as the schema says') { action.state == true }
       action.change_state(GLib::Variant.new(false))
       d.check('the action follows') { action.state == false }
-      d.check('the setting follows') { app.settings.get_boolean('tabs-bar') == false }
+      d.check('the setting follows') { app.window.settings.get_boolean('tabs-bar') == false }
     end
   end
 
@@ -87,16 +87,16 @@ GtkDriver.drive(Tangram::Application.new, shots: 'tmp/shots') do |d, app|
   dialog = nil
 
   d.step('a tab opens its editor') do
-    instance = app.instances.create(name: 'Example', url: 'https://example.org')
+    instance = app.window.instances.create(name: 'Example', url: 'https://example.org')
     dialog = InstanceDialog.new(
       instance:  instance,
       on_delete: ->(id) { deleted << id },
     )
-    dialog.present(app.window)
+    dialog.present(app.window.window)
   end
 
   d.step('the editor shows the tab') do
-    d.check('the editor is visible') { app.window.visible_dialog == dialog.dialog }
+    d.check('the editor is visible') { app.window.window.visible_dialog == dialog.dialog }
     d.check('the name row is filled in') { dialog.name_row.text == 'Example' }
     d.check('the homepage row is filled in') { dialog.url_row.text == 'https://example.org' }
     d.check('the priority row defaults to Normal') { dialog.priority_row.selected.zero? }
@@ -126,16 +126,21 @@ GtkDriver.drive(Tangram::Application.new, shots: 'tmp/shots') do |d, app|
     d.check('the settings hold it too') do
       Settings.instance(instance.id).get_string('name') == 'Renamed'
     end
-    d.check('the editor closed itself') { app.window.visible_dialog.nil? }
+    d.check('the editor closed itself') { app.window.window.visible_dialog.nil? }
   end
 
+  d.step('the editor is reopened') do
+    dialog.present(app.window.window)
+  end
+
+  # A tick apart: the alert presents itself into the editor dialog, which has
+  # to be on screen before it can take anything on top of it.
   d.step('the delete confirmation opens over the editor') do
-    dialog.present(app.window)
     dialog.button_delete.activate
   end
 
   d.step('the confirmation asks before deleting') do
-    d.check('the alert is on top') { app.window.visible_dialog == dialog.delete_tab_dialog.dialog }
+    d.check('the alert is on top') { app.window.window.visible_dialog == dialog.delete_tab_dialog.dialog }
     d.check('it offers cancel and delete') do
       dialog.delete_tab_dialog.dialog.has_response?('cancel') && dialog.delete_tab_dialog.dialog.has_response?('delete')
     end
@@ -161,13 +166,13 @@ GtkDriver.drive(Tangram::Application.new, shots: 'tmp/shots') do |d, app|
     # The editor is force-closed from under the alert, so the alert is the
     # only dialog left; a real click on "Delete" closes that one itself.
     d.check('the editor was taken down with it') do
-      app.window.visible_dialog != dialog.dialog
+      app.window.window.visible_dialog != dialog.dialog
     end
-    app.window.visible_dialog&.close
+    app.window.window.visible_dialog&.close
   end
 
   d.step('the window is back on its own') do
-    d.check('no dialog left') { app.window.visible_dialog.nil? }
+    d.check('no dialog left') { app.window.window.visible_dialog.nil? }
     d.shot('06-after-delete')
   end
 end

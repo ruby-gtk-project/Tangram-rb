@@ -275,3 +275,34 @@ Non-widget support files the components above need:
    un-namespaced; `lib/tangram/application.rb` alone keeps the gem path and the
    `Tangram::` module. Worth settling before `lib/window.rb` is written, since
    the window is what `application.rb` will require.
+
+## Round 1 resolution
+
+Blockers 1, 2 and 6 above are settled; the rest stand.
+
+1. **WebKit binding — resolved.** `GObjectIntrospection::Loader.load('WebKit', WebKit)`
+   does carry the widget, not just the version constants. The one quirk worth
+   recording: `network-session`, `web-context` and `user-content-manager` are
+   construct-only, and the generated `WebKit::WebView#initialize` takes no
+   arguments, so they cannot be set at all on a plain `WebKit::WebView.new`.
+   A named Ruby subclass that calls `type_register` gets GObject's own
+   property-hash constructor and accepts them; that subclass is
+   `TabWebView` in `lib/web_view.rb`. `webkitgtk_6_0` and `libsoup_3` were
+   already on the dev shell; `glib-networking` was not, and without its GIO
+   TLS backend every https request failed, so it is there now.
+2. **Upstream ref — resolved.** It is `origin/main`, as this file already
+   said; the task text's `origin/master` does not exist in this clone.
+6. **Spec parity — resolved for `src/utils.test.js`.** `spec/url_spec.rb`
+   ports every one of its `assert.is` lines, plus `normalize` and
+   `allowed_for_navigation?`, which upstream never tested. `po/` is still
+   unported.
+
+The one thing the port now does that upstream only wrote and commented out is
+`ViewNew#replace_previous`: the welcome page can come back with a web view
+still in the stack, and a second address typed into it would otherwise add a
+second GtkStack child under the name `new-tab`, which GTK refuses.
+
+Upstream's `initialize-notification-permissions` handler has no port: the GI
+binding segfaults converting a GList that carries a `WebKitSecurityOrigin`.
+`permission-request` allows every notification request outright, which reaches
+the same state.

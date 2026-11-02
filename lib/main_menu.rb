@@ -8,8 +8,10 @@ require 'adwaita'
 # Ported from the `menu menu_app` block at the end of upstream's
 # src/ViewTabs.blp, which both of that window's header bars point at.
 class MainMenu
+  # Memoized: the two header bars both point their menu button at this one
+  # model, and a section appended twice would be listed twice.
   def build
-    menu.tap do |model|
+    @build ||= menu.tap do |model|
       model.append('Show Tabs Bar', 'app.tabs-bar')
 
       help_section.tap do |section|

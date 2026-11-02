@@ -151,10 +151,35 @@ module Url
 
       def normalize_absolute(text)
         URI_PATTERN.match(text).then do |match|
-          if match && SCHEMES.include?(match[:scheme].downcase)
+          if usable?(match)
             "#{match[:scheme].downcase}://#{match[:authority]}#{match[:rest]}"
           end
         end
+      end
+
+      def usable?(match)
+        !match.nil? &&
+          SCHEMES.include?(match[:scheme].downcase) &&
+          usable_authority?(match[:authority])
+      end
+
+      # An http(s) address needs a host, and a port if it carries one has to
+      # be a number. The pattern above is deliberately lenient — `host` has to
+      # read the authority out of addresses this port does not handle, such as
+      # `about:blank` — so this is where an address the user typed is turned
+      # down. It stands in for the parse `g_uri_parse` would refuse: upstream
+      # hands "ftp://example.org" to it as "http://ftp://example.org", whose
+      # empty port makes it fail, and so the address comes to nothing.
+      def usable_authority?(authority)
+        strip_port(authority.to_s.split('@').last.to_s).then do |host|
+          !host.empty? && usable_port?(authority.to_s)
+        end
+      end
+
+      def usable_port?(authority)
+        port = authority[/\A(?:\[[^\]]*\]|[^:]*):(.*)\z/, 1]
+
+        port.nil? || port.match?(/\A\d+\z/)
       end
 
       def host_of(authority)
