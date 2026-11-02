@@ -14,28 +14,38 @@ written in this step.
   declaration inside `ViewTabs.blp`. Each is loaded by a `Gtk.Builder` and
   destructured by id in the matching `.js` file, so the component is the
   `.blp` + `.js` pair.
-- Port side today: `lib/tangram.rb` and `lib/tangram/application.rb` (a
-  placeholder window with an `Adw.StatusPage` reading "The Ruby port has not
-  been written yet"), plus `lib/tangram/rb/version.rb`. **No user-facing
-  component is ported.**
+- Port side today (re-surveyed after commit `775f442`, "Port the settings, tab
+  model and the dialogs the menu opens"): 12 files in `lib/`. The support and
+  model layer is in place (`env.rb`, `settings.rb`, `state.rb`, `url.rb`,
+  `instances.rb`), as are the four chrome components the primary menu reaches
+  (`main_menu.rb`, `about_dialog.rb`, `shortcuts_dialog.rb`) and the Edit Tab
+  pair (`instance_dialog.rb`, `delete_tab_dialog.rb`). **Everything that holds
+  web content is still unported** — no `window.rb`, no `view_tabs.rb`, no
+  `view_new.rb`, no `tabs.rb`, no `web_view.rb` — and the window in
+  `lib/tangram/application.rb` is still a single `Adw.StatusPage` standing in
+  for `ViewNew`'s welcome state rather than the real two-view `Gtk.Stack`.
 
 The house shape from the pilot (`gnome-contacts-rb`) is flat `lib/<thing>.rb`
-with one class per file, so the target paths below are flat. The one existing
-file sits at `lib/tangram/application.rb` under the gem layout; it is the file
-that becomes `lib/application.rb` (or keeps its path, if the gem layout is kept
-— that decision belongs to the first port unit, not to this survey).
+with one class per file, and the ported files follow it. The one exception is
+`lib/tangram/application.rb`, which kept the gem layout's namespaced path; it
+is the file that would become `lib/application.rb` if the gem namespace is
+dropped. That decision has now been made by use — every other ported file is
+flat and un-namespaced — so the open item is only whether `application.rb`
+moves to match.
 
 ## Totals
 
 | | Upstream | `ruby` branch |
 |---|---:|---:|
-| Component units | 13 | 1 (placeholder) |
-| Distinct widget types | 23 | 5 |
-| Distinct CSS classes applied | 5 (`suggested-action`, `destructive-action`, `pill`, `flat`, `tab-close-button`) | 0 |
-| Window/app actions | 6 (`app.about`, `app.shortcuts`, `app.showInstance(s)`, `app.quit`, `app.tabs-bar`, `win.editTab`) | 0 |
-| Keyboard shortcuts bound | 11 (8 via `Gtk.ShortcutController`, 3 via `set_accels_for_action`) | 0 |
-| GSettings schemas | 2 (`re.sonny.Tangram`, `re.sonny.Tangram.Instance`) | 0 |
-| `po/` catalogue | 21 languages, `re.sonny.Tangram.pot` | not set up |
+| Component units | 13 | 5 complete, 3 partial, 5 absent |
+| Distinct widget types | 23 | 17 |
+| Distinct CSS classes applied | 5 (`suggested-action`, `destructive-action`, `pill`, `flat`, `tab-close-button`) | 3 (`suggested-action`, `destructive-action`, `pill`) |
+| Window/app actions | 6 (`app.about`, `app.shortcuts`, `app.showInstance(s)`, `app.quit`, `app.tabs-bar`, `win.editTab`) | 4 (`app.about`, `app.shortcuts`, `app.quit`, `app.tabs-bar`) |
+| Keyboard shortcuts bound | 11 (8 via `Gtk.ShortcutController`, 3 via `set_accels_for_action`) | 3 (the `set_accels_for_action` trio) |
+| Shortcuts-window rows listed | 22 | 22 |
+| GSettings schemas | 2 (`re.sonny.Tangram`, `re.sonny.Tangram.Instance`) | both keysets reproduced in `lib/settings.rb`, JSON-backed, no `.gschema.xml` |
+| `po/` catalogue | 21 languages, `re.sonny.Tangram.pot` | not set up — no `po/`, every string is a literal |
+| Specs | `src/utils.test.js` | none — `spec/` holds only `spec_helper.rb`, although `lib/url.rb` names `spec/url_spec.rb` in its comment |
 
 ---
 
@@ -193,67 +203,75 @@ properties.
 
 ## Component list
 
+Status is re-read against `lib/` at commit `775f442`.
+
 | # | Upstream file(s) | Target `lib/*.rb` | Kind | Exists on `ruby`? |
 |---:|---|---|---|---|
-| 1 | `src/application.js`, `src/main.js`, `src/style.css` | `lib/application.rb` | application | partly — `lib/tangram/application.rb` is a placeholder window with a status page; no CSS, no actions, no views |
-| 2 | `src/window.blp`, `src/window.js` | `lib/window.rb` | window | no |
-| 3 | `src/ViewTabs.blp`, `src/ViewTabs.js` | `lib/view_tabs.rb` | page | no |
-| 4 | `src/ViewNew.blp`, `src/ViewNew.js` | `lib/view_new.rb` | page | no |
-| 5 | `src/tabs.js` | `lib/tabs.rb` | tab pages (repeater) | no |
-| 6 | `src/ViewTabs.blp` (`menu menu_app`) | `lib/main_menu.rb` | menu | no |
-| 7 | `src/instanceDialog.blp`, `src/instanceDialog.js` | `lib/instance_dialog.rb` | dialog | no |
-| 8 | `src/instanceDialog.js` (`onDelete`) | `lib/delete_tab_dialog.rb` | alert dialog | no |
-| 9 | `src/shortcuts.blp` | `lib/shortcuts_dialog.rb` | shortcuts window | no |
-| 10 | `src/Shortcuts.js` | `lib/shortcuts.rb` | keyboard shortcuts | no |
-| 11 | `src/Actions.js` | `lib/actions.rb` | actions | no |
-| 12 | `src/AboutDialog.js` | `lib/about_dialog.rb` | dialog | no |
-| 13 | `src/WebView.js` | `lib/web_view.rb` | widget | no |
+| 1 | `src/application.js`, `src/main.js`, `src/style.css` | `lib/tangram/application.rb` | application | **partial** — app id, window geometry, icon search path, the three app accels, four app actions and `settings.persist_window_state` are in place. Missing: the two-view `Gtk.Stack` (it presents a bare `Adw.StatusPage`), `src/style.css`'s `.tab-close-button` rule, the `PULSE_PROP_*` env vars from `main.js`, and the dev-only `app.restart` on `<Primary><Shift>Q` |
+| 2 | `src/window.blp`, `src/window.js` | `lib/window.rb` | window | **no** — no file. The window is inlined in `application.rb` without the `Gtk.Stack`, the `Adw.Breakpoint`, `onNotification`, the six navigation callbacks, `onAddTab`/`onCancelNewTab`, or the `observeSetting(settings, "instances")` empty-state hook |
+| 3 | `src/ViewTabs.blp`, `src/ViewTabs.js` | `lib/view_tabs.rb` | page | **no** |
+| 4 | `src/ViewNew.blp`, `src/ViewNew.js` | `lib/view_new.rb` | page | **no** — only the welcome `Adw.StatusPage`'s three strings survive, as the placeholder window's content |
+| 5 | `src/tabs.js` | `lib/tabs.rb` | tab pages (repeater) | **no** |
+| 6 | `src/ViewTabs.blp` (`menu menu_app`) | `lib/main_menu.rb` | menu | **yes** — all three items, both sections, same actions |
+| 7 | `src/instanceDialog.blp`, `src/instanceDialog.js` | `lib/instance_dialog.rb` | dialog | **yes** — dialog, toolbar view, header bar, three buttons with their CSS classes, three `Adw.EntryRow`s, the `Adw.ComboRow` and its four-string model, and the URL-gates-Update behaviour |
+| 8 | `src/instanceDialog.js` (`onDelete`) | `lib/delete_tab_dialog.rb` | alert dialog | **yes** — same heading, body, two responses, destructive appearance and close response; the awaited `choose` becomes the `response` signal |
+| 9 | `src/shortcuts.blp` | `lib/shortcuts_dialog.rb` | shortcuts window | **yes** — all 22 rows in three groups, as `Adw.ShortcutsDialog` (the deliberate substitution; see blocker 4). The two gesture rows carry the gesture in a subtitle because `Adw.ShortcutsItem` has no gesture type |
+| 10 | `src/Shortcuts.js` | `lib/shortcuts.rb` | keyboard shortcuts | **partial** — the three `set_accels_for_action` lines live in `Application::ACCELERATORS`. The `Gtk.ShortcutController` with its eight web-view shortcuts (`<Alt>Home`, `Escape`, `<Control>R`/`F5`, `<Control><Shift>R`/`<Shift>F5`, `<Alt>Left`, `<Alt>Right`, `<Control><Shift>I`, `<Control>L`) has no file and no code |
+| 11 | `src/Actions.js` | `lib/actions.rb` | actions | **partial** — `app.about`, `app.shortcuts`, `app.quit` and `app.tabs-bar` are installed inline in `application.rb`. Missing: `app.showInstance` (parameter type `s`, the notification's default action) and `win.editTab`. No separate file yet |
+| 12 | `src/AboutDialog.js` | `lib/about_dialog.rb` | dialog | **yes** — as `Adw.AboutDialog`, with the credit section and a `debug_info` block reading the WebKit/Soup/Adwaita/GTK/GLib versions off the typelibs |
+| 13 | `src/WebView.js` | `lib/web_view.rb` | widget | **no** — blocked, see blocker 1 |
 
-Non-widget support files that the components above need, listed so they are not
-mistaken for components:
+Non-widget support files the components above need:
 
 | Upstream file(s) | Target `lib/*.rb` | Kind | Exists? |
 |---|---|---|---|
-| `src/instances.js` | `lib/instances.rb` | model | no |
-| `src/state.js` | `lib/state.rb` | model | no |
-| `src/env.js` | `lib/env.rb` | support | no |
-| `src/util.js` (incl. `Settings`), `data/re.sonny.Tangram.gschema.xml` | `lib/settings.rb` | settings/schema | no |
-| `src/utils.js` (`normalizeURL`, `isSameSite`) | `lib/url.rb` | support | no — note `src/utils.test.js` exists upstream and is the spec to port |
-| `src/constants.js` | folded into `lib/web_view.rb` | support | no |
-| `src/webapp/webapp.js`, `src/webapp/ephy.js` | `lib/web_app_info.rb` | support | no |
-| `troll/src/util.js` (`persistWindowState`, version helpers) | folded into `lib/window.rb` / `lib/about_dialog.rb` | support | no — a git submodule, not checked out; its rows belong to the files that import it |
-| `po/*` (21 languages) | translation setup | i18n | no |
+| `src/instances.js` | `lib/instances.rb` | model | **yes** — `Instance` and `Instances`, with create/attach/detach/destroy, the directories and the random id |
+| `src/state.js` | `lib/state.rb` | model | **yes** — `get`/`set`/`notify`/`bind` |
+| `src/env.js` | `lib/env.rb` | support | **yes** — flatpak/dev/host detection and the four directories |
+| `src/util.js` (incl. `Settings`), `data/re.sonny.Tangram.gschema.xml` | `lib/settings.rb` | settings/schema | **yes, with a divergence** — both schemas' keys and defaults, `observe`, `bind`, `create_action` and `persist_window_state`, but backed by a JSON file under `Env.config_dir` keyed by dconf-style object paths rather than by a compiled GSettings schema |
+| `src/utils.js` (`normalizeURL`, `isSameSite`) | `lib/url.rb` | support | **yes** — libsoup 3 loaded through `GObjectIntrospection::Loader` for the public-suffix lookup. `src/utils.test.js` is **not** ported; `lib/url.rb` names `spec/url_spec.rb` but that file does not exist |
+| `src/constants.js` | folded into `lib/web_view.rb` | support | **no** — the `MODES` pair arrives with the web view |
+| `src/webapp/webapp.js`, `src/webapp/ephy.js` | `lib/web_app_info.rb` | support | **no** — the manifest/title/icon/URL probe `onAddTab` awaits |
+| `troll/src/util.js` (`persistWindowState`, version helpers), `troll/src/async.js` | folded into `lib/settings.rb` / `lib/about_dialog.rb` | support | **yes, inferred** — `persist_window_state` and the version readers exist; the submodule is still not checked out, so neither was read against its source |
+| `po/*` (21 languages) | translation setup | i18n | **no** — no `po/`, no gettext call, every ported string is a Ruby literal |
 
 ## Blockers
 
-1. **No WebKit binding.** Upstream is a WebKit browser — `src/WebView.js`,
+1. **No WebKit binding.** This is the one blocker that stops the port being an
+   app rather than a chrome. Upstream is a WebKit browser — `src/WebView.js`,
    `src/ViewNew.js` and `src/tabs.js` are all built on `WebKit.WebView`
    (WebKit 6.0, the GTK4 ABI). Neither `Gemfile` nor `flake.nix` carries any
    WebKit input, and ruby-gnome's `webkit2-gtk` gem binds the GTK3-era
-   WebKit2GTK 4.x, not WebKit 6.0. Without a WebKit 6.0 binding (a gem, or
-   GObject-Introspection through `gobject-introspection`), components 3, 4, 5
-   and 13 cannot reach parity and the app has no content area. This needs a
-   decision before any port unit that touches a web view.
+   WebKit2GTK 4.x, not WebKit 6.0. `lib/about_dialog.rb` does already reach
+   WebKit 6.0 through `GObjectIntrospection::Loader.load('WebKit', WebKit)`
+   purely to read its version, which suggests the same route could carry the
+   widget — that needs proving before components 2, 3, 4, 5 and 13 can be
+   planned.
 2. **Upstream ref name.** The task says `origin/master`; this clone has no such
-   ref. Everything here was read from `origin/main`. Worth confirming that is
-   the intended spec ref.
+   ref (`git ls-tree origin/master` fails). Everything here is read from
+   `origin/main`, whose tip is `d68f681`.
 3. **`troll` submodule is not checked out.** `persistWindowState`, the
    `getGjsVersion`/`getGIRepositoryVersion` helpers and `promiseTask` live
-   there, so their behaviour was inferred from call sites, not read. Window
-   state persistence and the About dialog's `debug_info` need the real source
-   before they can be matched exactly.
-4. **Deprecated upstream widgets.** `Gtk.ShortcutsWindow` (component 9) and
-   `Adw.AboutWindow` (component 12) are deprecated in current GTK/libadwaita.
-   The pilot port uses `Adw.ShortcutsDialog`; the equivalent substitution for
-   About is `Adw.AboutDialog`. These are intentional divergences to record
-   rather than parity gaps.
-5. **GSettings schemas are unported.** Two schemas with an enum
-   (`re.sonny.Tangram`, `re.sonny.Tangram.Instance`) back the window state, the
-   tabs-bar toggle, the instance list and every per-instance preference. The
-   port has no schema and no compiled schema directory, so the Edit Tab dialog
-   and the tabs-bar menu item have nothing to read or write yet.
-6. **Gem layout vs. house layout.** The house shape is flat `lib/<thing>.rb`
-   (as in `gnome-contacts-rb`), but this fork is packaged as a gem with
-   `lib/tangram/application.rb` and `lib/tangram/rb/version.rb`. The target
-   paths above are the flat form; whoever ports the first unit should settle
-   whether the gem namespace stays.
+   there. The port has written its own equivalents from the call sites, so the
+   window-state and `debug_info` behaviour is plausible but unverified against
+   the real source.
+4. **Deprecated upstream widgets — resolved as deliberate divergences.**
+   `Gtk.ShortcutsWindow` (component 9) is deprecated in GTK 4.18+ and its Ruby
+   binding raises `GtkWindow is not subtype of GtkShortcutsWindow`;
+   `Adw.AboutWindow` (component 12) is deprecated too. The port uses
+   `Adw.ShortcutsDialog` and `Adw.AboutDialog`. Recorded here so a later
+   parity check does not read them as gaps.
+5. **GSettings schemas are replaced, not ported.** `lib/settings.rb` carries
+   both schemas' keys with upstream's defaults but stores them in JSON under
+   `Env.config_dir`, so no schema compilation is needed to run from a checkout.
+   The consequence to track: `Gio::Settings.bind` and `create_action` semantics
+   are reimplemented by hand, so anything upstream gets from GSettings for free
+   needs a test rather than an assumption.
+6. **No test or translation parity yet.** `src/utils.test.js` is upstream's only
+   spec and is unported despite `lib/url.rb` pointing at `spec/url_spec.rb`;
+   `po/` has 21 catalogues and the port has none. Both are separate parity
+   steps, but the missing `spec/url_spec.rb` is a dangling reference today.
+7. **Gem layout vs. house layout.** Eleven ported files are flat and
+   un-namespaced; `lib/tangram/application.rb` alone keeps the gem path and the
+   `Tangram::` module. Worth settling before `lib/window.rb` is written, since
+   the window is what `application.rb` will require.
