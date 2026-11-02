@@ -25,6 +25,14 @@
           libadwaita
           harfbuzz
           librsvg
+          # Tangram is a browser: WebKitGTK is the engine every tab runs in,
+          # and libsoup carries both the HTTP session the web-app manifest
+          # fetch uses and `Soup.tld_get_base_domain`, the public-suffix lookup
+          # behind the same-site navigation policy. Both are here rather than
+          # in a list of their own so their typelibs land on GI_TYPELIB_PATH,
+          # which is derived from this list.
+          libsoup_3
+          webkitgtk_6_0
         ]
         # The Ruby `pkg-config` gem resolves `Requires.private` transitively and
         # hard-fails if any .pc in the chain is missing, so gtk4's whole private

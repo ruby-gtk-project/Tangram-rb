@@ -25,6 +25,7 @@ AllCops:
     - reference/**/*
     - references/**/*   # vendored upstream checkouts, with configs of their own
     - pkg/**/*
+    - test/gtk_driver.rb   # vendored from .claude/skills/ruby-gtk-testing
 
 # Bans `lvar = begin ... end`. Force
 #   begin
