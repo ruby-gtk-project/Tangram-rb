@@ -76,7 +76,13 @@ ADDRESS = "127.0.0.1:#{PORT}"
 # Buttons are clicked with `signal_emit('clicked')` rather than `activate`:
 # GtkButton's activate runs through a timeout tied to the frame clock, which
 # in an offscreen window lands an unpredictable number of ticks later.
-GtkDriver.drive(Tangram::Application.new, shots: 'tmp/shots', interval: 1000) do |d, app|
+#
+# The interval is 3000ms rather than tally's 500: this step drives a real
+# WebKitWebView loading a real (if local) HTTP response, and on a loaded
+# sandboxed machine that routinely takes longer than one second to settle.
+# 1000ms made "it finished loading" flake under load; 3000ms gave it margin
+# and 38/38 checks passed repeatedly.
+GtkDriver.drive(Tangram::Application.new, shots: 'tmp/shots', interval: 3000) do |d, app|
   d.window { app.window.window }
 
   view_new = -> { app.window.view_new }
