@@ -1,0 +1,92 @@
+# Tangram-rb — component parity
+
+Four axes — count, style, behaviour, text — judged per component, against
+`origin/main` @ `d68f681` (see `component-identification.md` for why `main`
+and not the task's named `master`). Gaps below are gaps: none is excused by
+anything in this document or any other.
+
+## Gaps found
+
+### 1. `lib/web_view.rb` — three pieces of `src/WebView.js` not ported (behaviour axis)
+
+The class comment names all three itself:
+
+- `tangram-resource` URI scheme (`security_manager.register_uri_scheme_as_local`
+  + `web_context.register_uri_scheme`, `src/WebView.js:97-104`) — **not
+  present** in `lib/web_view.rb`. No code anywhere in `lib/` registers a URI
+  scheme. This is a real gap in the *mechanism*, whether or not any resource
+  is currently served through it upstream (no `.gresource.xml` was found in
+  this upstream tree to confirm what, if anything, upstream serves over it
+  today — but the registration itself is missing, not just an unused
+  consumer of it).
+- `initialize-notification-permissions` auto-grant (`src/WebView.js:109-116`)
+  — not present. Upstream pre-grants the notification permission for a
+  single-site tab's own origin so the web app never has to ask; the port's
+  web view will prompt the user instead. User-visible behaviour change.
+- The commented-out web-inspector block — dead code upstream, correctly not
+  ported. Not a gap.
+
+The scheme and the notification auto-grant **are** gaps; the comment in
+`lib/web_view.rb:56-76` already says so honestly in its own prose, but
+`.reports/component-inventory.md` (written in an earlier pass) contradicts
+it and claims the scheme is ported. That contradiction is itself a finding —
+see `accountability-ensurance.md`.
+
+### 2. `src/style.css` — one CSS rule not ported (style axis)
+
+`.tab-close-button` hides the tab-overview thumbnail close button. No
+`Gtk::CssProvider` exists anywhere in `lib/`, so no port stylesheet is loaded
+at all. Confirmed: `grep -rn CssProvider lib/` returns nothing. This is a
+style-axis gap on `lib/view_tabs.rb`'s tab overview (component #3).
+
+### 3. `lib/web_app_info.rb` — the title-priority fallback chain exists in code, but its behaviour is only exercised by one path (behaviour/text axis, feeds into test-parity)
+
+The Ruby carries the same fallback order as `src/webapp/webapp.js`/`ephy.js`
+(`application-name` → `apple-mobile-web-app-title` → `og:site_name` →
+`<title>` → hostname; manifest `short_name`/`name`/`start_url` override). The
+*code* has parity. What is missing is proof: see `test-parity.md` — 8 of the
+9 upstream scenarios covering this exact priority chain have no Ruby
+counterpart, driven or unit. A behaviour this is not a count/style gap but it
+means the claim "ported" rests on reading the code, not on anything that ran.
+
+### 4. `src/application.js`'s dev-only restart action — correspondence, not a gap
+
+`app.restart` on `<Primary><Shift>Q` re-execs the Flatpak dev bundle a
+checkout was built from. This port has no bundle to re-exec from — there is
+nothing to port *to*, not a decision to skip something that exists. Recorded
+here as a correspondence per `component-parity`'s own rule (a widget/action
+that cannot exist in the port's run mode is not the same as one the port
+chose not to build). Flagged in `accountability-ensurance.md` only because of
+*how* the class comment phrases it, not because the omission itself is in
+question.
+
+### 5. GSettings schema → JSON store — correspondence
+
+`lib/settings.rb` reproduces both upstream GSettings schemas' keys, defaults,
+`observe`/`bind`/`create_action` against a JSON file rather than compiled
+`.gschema.xml`. Same key surface, different storage. Spot-checked against
+`data/re.sonny.Tangram.gschema.xml` — key set matches. Correspondence, not a
+gap, same as `component-identification.md`'s existing note.
+
+## What was checked and found clean
+
+- Window/app actions (6), keyboard shortcuts (11), shortcuts-dialog rows (22):
+  spot-checked against `src/Actions.js`, `src/Shortcuts.js`, `src/shortcuts.blp`
+  — counts match what `component-inventory.md` already recorded.
+- `Adw.ShortcutsDialog` for `GtkShortcutsWindow`, `Adw.AboutDialog` for
+  `AdwAboutDialog` wrapper rename: correspondences, not gaps.
+- `lib/instance_dialog.rb`/`lib/delete_tab_dialog.rb`: button CSS classes
+  (`suggested-action`, `destructive-action`), the three `Adw.EntryRow`s, the
+  `Adw.ComboRow` model: present, matches `src/instanceDialog.blp`.
+
+## Totals
+
+| Axis | Status |
+|---|---|
+| Count | clean, all 13 units present with matching widget counts (spot-checked) |
+| Style | **1 gap** — `.tab-close-button` never loaded |
+| Behaviour | **2 gaps** — `tangram-resource` scheme, notification auto-grant |
+| Text | not separately audited here — see `translation-parity.md`, which is the authority on msgid survival and finds the condition this axis depends on (a catalogue existing at all) is not met |
+
+Component parity is **not clean**: 3 behaviour/style gaps located and named
+above, plus the text axis failing wholesale per `translation-parity.md`.
