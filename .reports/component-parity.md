@@ -90,3 +90,39 @@ gap, same as `component-identification.md`'s existing note.
 
 Component parity is **not clean**: 3 behaviour/style gaps located and named
 above, plus the text axis failing wholesale per `translation-parity.md`.
+
+## Resolved this round
+
+Two of the three behaviour/style gaps above are closed:
+
+- **Gap 1's `tangram-resource` scheme is now registered.**
+  `lib/web_view.rb#web_context` calls
+  `security_manager.register_uri_scheme_as_local('tangram-resource')` and
+  `context.register_uri_scheme('tangram-resource') { ... }` for real, serving
+  files out of this port's `data/` directory (the icons and `style.css`) —
+  the one real resource source the port has, in place of upstream's
+  GResource bundle of JS modules, which has no counterpart to serve here (the
+  class comment explains the divergence in full). Verified by driving a real
+  `WebKit::WebView` through it: `tangram-resource:///style.css` loads with
+  `load-failed` never firing and `estimated_load_progress == 1.0`; a path
+  that resolves outside `data/` (`tangram-resource:///../../etc/passwd`)
+  resolves to nothing rather than escaping it.
+  `initialize-notification-permissions` remains unported — calling
+  `WebKit::WebContext#initialize_notification_permissions` with a non-empty
+  origin list was re-confirmed to segfault the process directly against this
+  port's GI loader, so this one piece of gap 1 stands; `lib/web_view.rb`'s
+  comment now says so as owed work rather than a settled decision.
+- **Gap 2 (`.tab-close-button`) was already fixed before this round — the
+  grep this document ran was stale, not the port.** `5392ea2` ("Port the
+  tab-overview close-button CSS workaround") added
+  `lib/tangram/application.rb#style_provider`, a `Gtk::CssProvider` that
+  loads `data/style.css` (which carries the rule) and is added to the
+  display at `PRIORITY_APPLICATION` on `activate`. `grep -rn CssProvider
+  lib/` now finds it. `component-inventory.md` is corrected to match.
+- **Gap 3 (`web_app_info.rb`'s fallback chain had no dedicated test)** is
+  closed by `spec/web_app_info_spec.rb` — see `test-parity.md`'s own
+  "Resolved this round" section.
+
+The only behaviour/style item still open is the one piece of gap 1 named
+above (`initialize-notification-permissions`), plus the text axis, which
+`translation-parity.md` still finds not met.

@@ -112,3 +112,37 @@ first run), not incidental plumbing.
 No binding limitation is in play for either gap in this document — nothing
 here is excused or made easier by a ruby-gnome defect. Both are plain missing
 test coverage for logic that already exists in `lib/`.
+
+## Resolved this round
+
+Both gaps above are closed, not just re-described:
+
+1. **`spec/web_app_info_spec.rb` ports all 9 scenarios, 11 assertions,
+   directly.** Each one runs a real `WebKit::WebView` against a real HTTP
+   response from a local server (the same shape `test/drive_new_tab.rb`
+   already used for its one indirect case), feeds `WebAppInfo.fetch`, and
+   asserts the same title/URL outcome upstream pinned — including the two
+   ordering assertions the table above only named as owed (`og:site_name`
+   property-vs-`application-name`, and the `name`-vs-`property` variant of
+   `og:site_name` against each other). 9/9 scenarios, 11/11 assertions.
+2. **`lib/tangram/application.rb` now has a driver step of its own.**
+   `test/drive_main_window.rb`'s new first step, "the application itself is
+   set up," checks `app.app`/`app.icon_theme`/`app.style_provider`
+   directly — application id, the three app-level accelerators
+   `Shortcuts#build` installs, the icon search path, the PulseAudio env
+   vars, and the loaded CSS provider — rather than only exercising
+   `Application` as the thing that happens to boot the window under test.
+3. **The gate now folds the RSpec suite in.** `test/run_all.rb` runs
+   `check_models.rb`, both `drive_*.rb` scripts and the whole of `spec/` as
+   four subprocesses (GTK/WebKit do not tolerate being initialized twice in
+   one process, which an in-process-RSpec first draft of this script found
+   out the hard way) and prints one combined total. As of this round:
+   `174 of 174 checks passed across 4 checks` — `57 + 39 + 38` from the
+   three scripts plus `40` RSpec examples (`url_spec.rb`'s 31 and
+   `web_app_info_spec.rb`'s 9), with none of the four excluded from the
+   headline figure.
+
+`test/check_models.rb`'s and `test/drive_main_window.rb`'s own totals moved
+(57 unchanged; `drive_main_window.rb` grew from 33 to 39 checks with the new
+application-level step) — the "128" in the gate quoted above is now "174,"
+and that number already includes the RSpec suite.

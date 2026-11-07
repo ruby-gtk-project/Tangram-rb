@@ -7,6 +7,27 @@ written in this step; this revises the previous survey (`fb78239`) against
 and the tab repeater"), which finished every component the prior survey
 listed as missing or partial.
 
+## Correction (this round)
+
+Two things below were wrong, both flagged already in
+`accountability-ensurance.md` and now fixed rather than left standing:
+
+1. **Row 13's "yes" cell claimed the `tangram-resource` scheme was ported.**
+   It was not — no `register_uri_scheme` call existed anywhere in `lib/`.
+   `lib/web_view.rb` now registers the scheme for real (serving out of this
+   port's own `data/` directory, since there is no GResource bundle of JS
+   modules here for it to serve instead — see that file's class comment for
+   the full divergence). Row 13 and the CSS-classes/support tables below are
+   corrected to say so.
+2. **The "Distinct CSS classes applied" row and the `src/style.css` support
+   row both still said no `Gtk::CssProvider` was loaded anywhere in `lib/`.**
+   That stopped being true at `5392ea2` ("Port the tab-overview close-button
+   CSS workaround"), two commits before this inventory was last written:
+   `lib/tangram/application.rb#style_provider` loads `data/style.css` (which
+   carries the `.tab-close-button` rule) and adds it to the display at
+   `PRIORITY_APPLICATION` on `activate`. The rows below are corrected; this
+   was a stale report, not a stale port.
+
 - Upstream ref read: **`origin/main`** (the task named `origin/master`; that
   ref does not exist in this clone — `git ls-tree origin/master` fails.
   `origin/main` is the upstream JavaScript implementation and is what every
@@ -33,7 +54,7 @@ listed as missing or partial.
 |---|---:|---:|
 | Component units | 13 | **13 — all present** |
 | Distinct widget types | 23 | 23 (via `Adwaita`/`Gtk` wrappers; see per-file tables) |
-| Distinct CSS classes applied | 5 (`suggested-action`, `destructive-action`, `pill`, `flat`, `tab-close-button`) | 4 (`suggested-action`, `destructive-action`, `pill`, `flat`) — `tab-close-button` (from `style.css`) not ported |
+| Distinct CSS classes applied | 5 (`suggested-action`, `destructive-action`, `pill`, `flat`, `tab-close-button`) | **5 — all present.** `tab-close-button` ships in `data/style.css`, loaded by a `Gtk::CssProvider` in `lib/tangram/application.rb` (see Correction above) |
 | Window/app actions | 6 (`app.about`, `app.shortcuts`, `app.showInstance(s)`, `app.quit`, `app.tabs-bar`, `win.editTab`) | **6 — all present** (`lib/actions.rb`) |
 | Keyboard shortcuts bound | 11 (8 via `Gtk.ShortcutController`, 3 via `set_accels_for_action`) | **11 — all present** (`lib/shortcuts.rb`) |
 | Shortcuts-window rows listed | 22 | 22 (`lib/shortcuts_dialog.rb`, as `Adw.ShortcutsDialog`) |
@@ -49,7 +70,7 @@ Status re-read against `lib/` at commit `e4a44d9`.
 
 | # | Upstream file(s) | Target `lib/*.rb` | Kind | Exists on `ruby`? |
 |---:|---|---|---|---|
-| 1 | `src/application.js`, `src/main.js` | `lib/tangram/application.rb` | application | **yes** — app id, window geometry (via `Window`), icon search path, the three app accels (via `Shortcuts`/`Actions`), four+ app actions, `Settings#persist_window_state`. Upstream's dev-only `app.restart` on `<Primary><Shift>Q` is deliberately left out (documented in the class comment: nothing to re-exec from a checkout). `src/style.css`'s one rule (`.tab-close-button`) is **not** ported — no `Gtk::CssProvider` anywhere in `lib/` |
+| 1 | `src/application.js`, `src/main.js` | `lib/tangram/application.rb` | application | **yes** — app id, window geometry (via `Window`), icon search path, the three app accels (via `Shortcuts`/`Actions`), four+ app actions, `Settings#persist_window_state`. Upstream's dev-only `app.restart` on `<Primary><Shift>Q` is deliberately left out (documented in the class comment: nothing to re-exec from a checkout). `src/style.css`'s one rule (`.tab-close-button`) **is** ported — `style_provider` is a `Gtk::CssProvider` loaded from `data/style.css` and added to the display on `activate` (see Correction above) |
 | 2 | `src/window.blp`, `src/window.js` | `lib/window.rb` | window | **yes** — the `Gtk::Stack` of the two named views bound to `state.view`, the `Adw.Breakpoint`, `persist_window_state`, the six navigation callbacks, `add_tab`/`cancel_new_tab`, the notification builder, and `settings.observe('instances')` driving the empty-state view switch |
 | 3 | `src/ViewTabs.blp`, `src/ViewTabs.js` | `lib/view_tabs.rb` | page | **yes** — both header bars, the tab overview/bar/view, the reload `GestureClick`, the breakpoint-driven bar reveal, the main menu wiring |
 | 4 | `src/ViewNew.blp`, `src/ViewNew.js` | `lib/view_new.rb` | page | **yes** — the "add a tab" flow, the preview web view, the status page's first-tab copy, the flat header-bar toggle. The port adds one behaviour upstream only commented out: `replace_previous`, so a second address typed into a returning welcome page does not try to add a second `GtkStack` child under the same name |
@@ -61,7 +82,7 @@ Status re-read against `lib/` at commit `e4a44d9`.
 | 10 | `src/Shortcuts.js` | `lib/shortcuts.rb` | keyboard shortcuts | **yes** — both the three `set_accels_for_action` lines and the `Gtk.ShortcutController` with its eight web-view shortcuts, hand-built from keyval+modifiers because `Gtk.ShortcutTrigger.parse_string` is unbound in ruby-gnome |
 | 11 | `src/Actions.js` | `lib/actions.rb` | actions | **yes** — `app.about`, `app.shortcuts`, `app.quit`, `app.showInstance` (string parameter, the notification's default action), `app.tabs-bar`, and `win.editTab` |
 | 12 | `src/AboutDialog.js` | `lib/about_dialog.rb` | dialog | **yes** — as `Adw.AboutDialog` (deliberate substitution — see Divergences), with the credit section and a `debug_info` block reading the WebKit/Soup/Adwaita/GTK/GLib versions off the typelibs |
-| 13 | `src/WebView.js` | `lib/web_view.rb` | widget | **yes** — `TabWebView < WebKit::WebView`, a named subclass so the construct-only `network-session`/`web-context`/`user-content-manager` properties can be set; the `tangram-resource` scheme, TLS policy, cookie/spell-check/sandbox setup, and the `create`/`permission-request`/`show-notification`/`decide-policy` signal handlers. `src/constants.js`'s `MODES` is folded in here, as the upstream file is otherwise a two-constant module |
+| 13 | `src/WebView.js` | `lib/web_view.rb` | widget | **yes, with one divergence and one real gap** — `TabWebView < WebKit::WebView`, a named subclass so the construct-only `network-session`/`web-context`/`user-content-manager` properties can be set; the `tangram-resource` scheme (now registered for real — serving `data/` rather than a GResource bundle of JS modules this port has no use for, see Divergences), TLS policy, cookie/spell-check/sandbox setup, and the `create`/`permission-request`/`show-notification`/`decide-policy` signal handlers. `src/constants.js`'s `MODES` is folded in here. **Not ported:** `initialize-notification-permissions` (see Divergences #4 — confirmed to segfault the Ruby binding, not merely skipped) |
 
 Non-widget support files the components above need:
 
@@ -75,9 +96,10 @@ Non-widget support files the components above need:
 | `src/constants.js` | folded into `lib/web_view.rb` | support | **yes** |
 | `src/webapp/webapp.js`, `src/webapp/ephy.js` | `lib/web_app_info.rb` | support | **yes** — the manifest/title/icon/URL probe `on_add_tab` awaits |
 | `troll/src/util.js` (`persistWindowState`, version helpers), `troll/src/async.js` | folded into `lib/settings.rb` / `lib/about_dialog.rb` | support | **yes, inferred** — `persist_window_state` and the version readers exist; the `troll` submodule is still not checked out, so neither was read against its real source |
-| `src/style.css` | none | stylesheet | **no** — the `.tab-close-button` rule (hides the tab-overview thumbnail close buttons) has no `Gtk::CssProvider` anywhere in `lib/` |
+| `src/style.css` | `data/style.css`, loaded by `lib/tangram/application.rb` | stylesheet | **yes** — the `.tab-close-button` rule (hides the tab-overview thumbnail close buttons), loaded by a `Gtk::CssProvider` added to the display on `activate` |
 | `po/*` (21 languages) | translation setup | i18n | **no** — no `po/`, no gettext call, every ported string is a Ruby literal |
-| `src/utils.test.js` | `spec/url_spec.rb` | spec | **yes** — ports every `assert.is` line plus `normalize`/`allowed_for_navigation?`, which upstream never tested. No spec exists yet for `window.rb`, `view_tabs.rb`, `view_new.rb`, `tabs.rb`, `web_view.rb` or `web_app_info.rb` |
+| `src/utils.test.js` | `spec/url_spec.rb` | spec | **yes** — ports every `assert.is` line plus `normalize`/`allowed_for_navigation?`, which upstream never tested |
+| `src/webapp/test.js` | `spec/web_app_info_spec.rb` | spec | **yes (this round)** — all 9 scenarios, run the way upstream ran them: a real `WebKit::WebView` loading real HTTP responses from a local server, fed to `WebAppInfo.fetch`. Previously only 1 of 9 was covered, indirectly, via one `test/drive_new_tab.rb` step; see `test-parity.md` |
 
 ## Divergences (deliberate, not gaps)
 
@@ -97,28 +119,36 @@ Non-widget support files the components above need:
    pilot. `lib/tangram/application.rb` alone keeps the gem path and the
    `Tangram::` module — this is now the one holdout, since `window.rb` (which
    it requires) landed flat.
-4. **`initialize-notification-permissions` has no port.** The GI binding
-   segfaults converting a GList that carries a `WebKitSecurityOrigin`;
-   `permission-request` allows every notification request outright instead,
-   which reaches the same end state for the one case upstream pre-grants.
+4. **`tangram-resource` now serves `data/`, not a GResource bundle.**
+   Upstream's bundle holds its GJS *source modules*; this port loads its
+   files with plain `require_relative` and has no such bundle, so the scheme
+   is registered against the one real resource source this port has:
+   `data/` (the icons and `style.css` `lib/tangram/application.rb` already
+   reads off disk). See `lib/web_view.rb`'s class comment.
+5. **`initialize-notification-permissions` has no port — confirmed, not
+   assumed.** Calling `WebKit::WebContext#initialize_notification_permissions`
+   with a non-empty list of `WebKit::SecurityOrigin` was tested directly
+   against this port's own GI loader and segfaults every time (an empty list
+   does not); there is no workaround available in the Ruby bindings as they
+   stand. `permission-request` allows every notification request outright
+   instead, which reaches the same end state for the one origin upstream
+   pre-grants, but the mechanism itself — and the one difference it would
+   make for an origin upstream never pre-granted — is simply absent, not
+   approximated.
 
 ## Open items (not blockers — nothing here stops the app running)
 
-1. **`src/style.css`'s `.tab-close-button` rule is unported.** Cosmetic: it
-   hides a WebKit-overview artifact in upstream's tab thumbnails. No
-   `Gtk::CssProvider` is loaded anywhere in `lib/`.
-2. **No `po/` / gettext.** 21 upstream catalogues, zero on `ruby`. Every
+1. **No `po/` / gettext.** 21 upstream catalogues, zero on `ruby`. Every
    string a widget shows is a Ruby literal. This is `translation-parity`'s
    job, not this survey's.
-3. **`troll` submodule still not checked out.** `persist_window_state` and
+2. **`troll` submodule still not checked out.** `persist_window_state` and
    the version-reading helpers in `lib/settings.rb`/`lib/about_dialog.rb` are
    written from the call sites in `window.js`/`AboutDialog.js`, not checked
    against `troll/src/util.js` itself.
-4. **Spec coverage stops at `url.rb`.** `spec/url_spec.rb` is the only spec;
-   `window.rb`, `view_tabs.rb`, `view_new.rb`, `tabs.rb`, `web_view.rb` and
-   `web_app_info.rb` — six files and roughly 1,900 lines — have none. This is
-   `test-parity`'s job.
-5. **Gem-path holdout.** `lib/tangram/application.rb` is the only namespaced,
+3. **`initialize-notification-permissions` has no port** — see Divergence 5
+   above; listed here too because it is owed work this port cannot pay
+   under the current Ruby bindings, not a settled decision.
+4. **Gem-path holdout.** `lib/tangram/application.rb` is the only namespaced,
    nested file left; moving it to flat `lib/application.rb` with a top-level
    `Application` class would match every other ported file and the pilot's
    house shape exactly.

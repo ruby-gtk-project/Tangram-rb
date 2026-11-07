@@ -93,5 +93,30 @@ rather than inherit.
 
 ## Verdict
 
-Not clean. One false-green claim in a committed report, and one comment in
-`lib/web_view.rb` that dresses two real gaps in decision language.
+Not clean when this was written. One false-green claim in a committed
+report, and one comment in `lib/web_view.rb` that dressed two real gaps in
+decision language.
+
+## Resolved this round
+
+Both findings are fixed, not just re-flagged:
+
+- **Finding 1 (the false-green row).** `component-inventory.md` row 13 is
+  corrected: the `tangram-resource` scheme is implemented for real now (see
+  `component-parity.md`'s "Resolved this round"), so the row's "yes" is true
+  rather than unearned. The same pass also caught and fixed a second,
+  separate stale claim the inventory carried — that no `Gtk::CssProvider`
+  was loaded anywhere in `lib/`, which stopped being true two commits before
+  the inventory was last written (`5392ea2`) and nobody had gone back to fix
+  the sentence.
+- **Finding 2 (decision language on real gaps).** `lib/web_view.rb`'s class
+  comment is rewritten. It no longer calls the scheme and the
+  notification-permissions auto-grant "deliberately left out" in one breath
+  with the dead web-inspector block. The scheme is now implemented (so that
+  clause is gone outright); the notification-permissions piece is described
+  as unported work the port owes, backed by a reproduced segfault rather
+  than an assumed one, not as a decision anyone stands behind.
+
+Finding 3 (the `app.restart` comment) was left as recorded — the finding
+itself says no action is needed since the substance checks out; only the
+phrasing habit was worth naming, and it was named, not fixed, there too.

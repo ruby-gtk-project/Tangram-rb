@@ -53,27 +53,48 @@ end
 # Ported from upstream's src/WebView.js, with src/constants.js folded into
 # TabWebView above.
 #
-# Three pieces of upstream's file are deliberately left out rather than
-# approximated.
+# One piece of upstream's file is a deliberate divergence, and one is missing
+# work this port owes and cannot pay yet.
 #
-# The first is the `tangram-resource` URI scheme, which serves files out of
-# upstream's GResource bundle; this port ships no resource bundle, so a scheme
-# handler would have nothing to answer with.
+# The divergence: the `tangram-resource` URI scheme is registered below, but
+# answers out of this port's own `data/` directory rather than upstream's
+# GResource bundle. Upstream's bundle holds its GJS *source modules* — the
+# scheme exists so `main.js` can `import` itself back out of the bundle it was
+# packed into — which has no counterpart here: this port loads its files with
+# plain `require_relative`, nothing is bundled, and there is no JS to serve.
+# What `data/` does hold — the app icons and `style.css` that
+# `lib/tangram/application.rb` already reads straight off disk — is served
+# under the scheme instead, which is the only thing in this port a
+# `tangram-resource://` request could usefully resolve to. The commented-out
+# web inspector block in the same upstream file is dead upstream too and has
+# no port either; the inspector is reached through the window's
+# `<Control><Shift>I` instead.
 #
-# The second is the commented-out web inspector block, which is dead upstream
-# too — the inspector is reached through the window's `<Control><Shift>I`
-# instead.
-#
-# The third is upstream's `initialize-notification-permissions` handler, which
+# The missing work: upstream's `initialize-notification-permissions` handler
 # pre-grants the notification permission for the tab's own origin so the web
 # app never has to ask. `webkit_web_context_initialize_notification_permissions`
-# takes two GLists of WebKitSecurityOrigin, and the Ruby binding segfaults
-# converting a list with an origin in it (an empty list is fine), so there is
-# no way to call it. Nothing is lost: `permission-request` below allows every
-# notification permission request outright, which is the state upstream's call
-# is reaching for.
+# takes two GLists of WebKitSecurityOrigin, and calling it with a non-empty
+# list segfaults the process — confirmed by calling it directly under this
+# port's own GI loader (`WebKit::WebContext#initialize_notification_permissions`
+# with one `WebKit::SecurityOrigin` crashes every time; an empty list is the
+# only list that does not). There is no workaround in the Ruby bindings as
+# they stand, so this is simply not ported. `permission-request` below allows
+# every notification permission request outright, which reaches the same
+# end state as upstream's pre-grant for the one case it covers, but is not a
+# port of the handler itself — a user-visible permission prompt upstream
+# skips still is not skipped here for any origin upstream did not pre-grant
+# (there are none, since upstream only ever pre-grants the tab's own origin,
+# so in practice this divergence has no visible effect — call it out anyway,
+# since the mechanism is absent, not merely inlined).
 class WebView
   APPLICATION_NAME = 'Tangram'
+
+  RESOURCE_SCHEME = 'tangram-resource'
+
+  # Where a `tangram-resource://` request resolves to: the same `data/`
+  # directory `lib/tangram/application.rb` already loads the icons and
+  # `style.css` from.
+  RESOURCE_DIR = File.expand_path('../../data', __dir__)
 
   # `on_notification` takes a WebKit notification and the tab's id; the window
   # turns it into a Gio notification.
@@ -155,6 +176,11 @@ class WebView
       context.set_spell_checking_languages(GLib.language_names)
       context.add_path_to_sandbox(instance.data_dir, true)
       context.add_path_to_sandbox(instance.cache_dir, true)
+
+      context.security_manager.register_uri_scheme_as_local(RESOURCE_SCHEME)
+      context.register_uri_scheme(RESOURCE_SCHEME) do |request|
+        serve_resource_request(request)
+      end
     end
   end
 
@@ -210,6 +236,35 @@ class WebView
         request.allow
       else
         request.deny
+      end
+    end
+
+    # Answers a `tangram-resource://` request out of `data/`. The path is
+    # resolved and checked against `RESOURCE_DIR` before anything is opened,
+    # so `tangram-resource:///../../anything` cannot walk out of it. A path
+    # that resolves outside `RESOURCE_DIR`, or to something that is not a
+    # plain file, gets a successful empty response rather than an error: the
+    # Ruby binding for `WebKitURISchemeRequest#finish_error` cannot convert a
+    # Ruby exception into the GError it needs, so an empty body is the only
+    # failure response available.
+    def serve_resource_request(request)
+      path = resolved_resource_path(request.path)
+
+      if path
+        file = Gio::File.new_for_path(path)
+        size = file.query_info('standard::size', 0, nil).size
+        content_type, = Gio::ContentType.guess(path, nil)
+        request.finish(file.read, size, content_type)
+      else
+        request.finish(Gio::MemoryInputStream.new, 0, 'text/plain')
+      end
+    end
+
+    def resolved_resource_path(requested_path)
+      path = File.expand_path(File.join(RESOURCE_DIR, requested_path.to_s))
+
+      if path.start_with?(RESOURCE_DIR + File::SEPARATOR) && File.file?(path)
+        path
       end
     end
 
