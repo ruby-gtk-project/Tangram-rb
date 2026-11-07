@@ -6,6 +6,7 @@
   <developer id="re.sonny">
     <name translatable="no">Sonny Piers</name>
   </developer>
+  <update_contact>tangram@sonny.re</update_contact>
   <metadata_license>CC0-1.0</metadata_license>
   <project_license>GPL-3.0</project_license>
   <summary>Browser for your pinned tabs</summary>
@@ -25,13 +26,192 @@
   </description>
   <url type="homepage">https://tangram.sonny.re</url>
   <url type="bugtracker">https://github.com/ruby-gtk-project/Tangram-rb/issues</url>
+  <url type="donation">https://tangram.sonny.re/donate</url>
+  <url type="translate">https://hosted.weblate.org/engage/tangram/</url>
+  <url type="vcs-browser">https://github.com/ruby-gtk-project/Tangram-rb</url>
+  <screenshots>
+    <screenshot type="default">
+      <image
+      >https://raw.githubusercontent.com/sonnyp/Tangram/main/data/appdata/desktop.png</image>
+      <caption>Tabs overview</caption>
+    </screenshot>
+  </screenshots>
   <content_rating type="oars-1.1" />
+  <releases>
+    <release version="3.5" date="2026-02-05">
+      <description translatable="no">
+        <ul>
+          <li>Fix files downloading</li>
+        </ul>
+      </description>
+    </release>
+
+    <release version="3.4" date="2025-10-13">
+      <description translatable="no">
+        <ul>
+          <li>Use GNOME Platform 49</li>
+        </ul>
+      </description>
+    </release>
+
+    <release version="3.3" date="2025-01-28">
+      <description translatable="no">
+        <ul>
+          <li>Fix crashes when adding or removing tabs</li>
+        </ul>
+      </description>
+    </release>
+
+    <release version="3.2" date="2025-01-28">
+      <description translatable="no">
+        <ul>
+          <li>Use GNOME platform 47</li>
+          <li>Add a Tab Bar</li>
+          <li>Fix crash when adding codeberg.org</li>
+          <li>Confirm deletion of tabs</li>
+          <li>Fix slow and choppy window resize</li>
+          <li>Enable live thumbnails in tab overview</li>
+        </ul>
+      </description>
+    </release>
+
+    <release version="3.1" date="2024-05-27">
+      <description translatable="no">
+        <ul>
+          <li>Use GNOME platform 46</li>
+        </ul>
+      </description>
+    </release>
+
+    <release version="3.0" date="2023-04-29">
+      <description translatable="no">
+        <ul>
+          <li>Replace sidebar with an overview</li>
+          <li>Show an indicator in overview for tabs playing audio</li>
+          <li>Fit correctly on handheld devices</li>
+          <li
+          >Pressing Ctrl while pressing the reload button will bypass the cache</li>
+          <li>Switch to Tangram when tapping notifications</li>
+          <li>Fix files download</li>
+          <li>Use GNOME 44</li>
+        </ul>
+      </description>
+    </release>
+
+    <release version="2.0" date="2023-01-18">
+      <description translatable="no">
+        <ul>
+          <li>New responsive and mobile UI</li>
+          <li>Improve onboarding experience</li>
+          <li>Port to GTK4</li>
+          <li>Use Libadwaita</li>
+        </ul>
+      </description>
+    </release>
+
+    <release version="1.5.0" date="2023-01-04" urgency="high">
+      <description translatable="no">
+        <ul>
+          <li>Update GNOME runtime to 43</li>
+        </ul>
+      </description>
+    </release>
+
+    <release version="1.4.2" date="2022-04-23" urgency="high">
+      <description translatable="no">
+        <ul>
+          <li>Fix a bug preventing to start Tangram</li>
+          <li>Reduce the noisiness of logs</li>
+        </ul>
+      </description>
+    </release>
+
+    <release version="1.4.1" date="2022-04-16" urgency="high">
+      <description translatable="no">
+        <ul>
+          <li>Fix a bug preventing to add new tabs</li>
+        </ul>
+      </description>
+    </release>
+
+    <release version="1.4.0" date="2021-11-20">
+      <description translatable="no">
+        <ul>
+          <li>Notifications priority is normal instead of urgent by default</li>
+          <li>Add a per-tab setting to change notifications priority</li>
+          <li>Fix authentication on many popular websites</li>
+          <li>Fix Cancel button in tab settings dialog</li>
+          <li>Use middle-click or Ctrl+click to open links in the browser</li>
+        </ul>
+      </description>
+    </release>
+
+    <release version="1.3.2" date="2021-10-25">
+      <description translatable="no">
+        <ul>
+          <li>Fix window title</li>
+          <li>Update GNOME runtime to 41</li>
+        </ul>
+      </description>
+    </release>
+
+    <release version="1.3.1" date="2020-09-12" urgency="high">
+      <description translatable="no">
+        <ul>
+          <li
+          >Fix an issue preventing some sites such as Twitter or Facebook from being added.</li>
+          <li>Update GNOME runtime to 3.38</li>
+        </ul>
+      </description>
+    </release>
+
+    <release version="1.3.0" date="2020-09-12">
+      <description translatable="no">
+        <ul>
+          <li>Enable spell checking</li>
+          <li>Customizable user-agent per instance</li>
+          <li>New project icon/logo</li>
+          <li>New tab background color respects dark mode</li>
+        </ul>
+      </description>
+    </release>
+
+    <release version="1.2.0" date="2019-09-19">
+      <description translatable="no">
+        <ul>
+          <li>Add support for downloading files</li>
+          <li>Add home button</li>
+          <li>Better desktop integration</li>
+          <li>Fix the main window becoming tiny when unmaximizing</li>
+          <li>Enable touchpad/touchscreen swipe navigation gestures</li>
+        </ul>
+      </description>
+    </release>
+
+    <release version="1.1.0" date="2019-09-14">
+      <description translatable="no">
+        <ul>
+          <li>Better notifications handling</li>
+          <li>Improved web compatibility and performances</li>
+          <li
+          >Tangram now works properly on Flatpak 1.0 (Linux Mint, Ubuntu 18.04, ...)</li>
+        </ul>
+      </description>
+    </release>
+    <release version="1.0.1" date="2019-09-10" />
+  </releases>
   <kudos>
     <kudo>HiDpiIcon</kudo>
     <kudo>HighContrast</kudo>
     <kudo>ModernToolkit</kudo>
     <kudo>Notifications</kudo>
   </kudos>
+
+  <branding>
+    <color type="primary" scheme_preference="light">#fa97af</color>
+    <color type="primary" scheme_preference="dark">#4644ad</color>
+  </branding>
+
   <requires>
     <display_length compare="ge">360</display_length>
   </requires>
