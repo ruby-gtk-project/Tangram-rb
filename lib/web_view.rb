@@ -5,6 +5,7 @@ require 'adwaita'
 require 'gobject-introspection'
 
 require_relative 'tangram/rb/version'
+require_relative 'translations'
 
 # WebKit carries the engine every tab runs in. There is no ruby-gnome gem for
 # WebKitGTK 6, so the typelib is loaded straight into a module of our own, the
@@ -87,6 +88,8 @@ end
 # so in practice this divergence has no visible effect — call it out anyway,
 # since the mechanism is absent, not merely inlined).
 class WebView
+  include Translations
+
   APPLICATION_NAME = 'Tangram'
 
   RESOURCE_SCHEME = 'tangram-resource'
@@ -359,7 +362,7 @@ class WebView
     # and is no better a suggestion than none at all.
     def save_dialog(suggested_filename)
       Gtk::FileDialog.new.tap do |dialog|
-        dialog.title = 'Save File'
+        dialog.title = _('Save File')
         dialog.initial_name = usable_filename(suggested_filename)
 
         download_folder.then do |folder|

@@ -3,6 +3,7 @@
 require 'adwaita'
 
 require_relative 'instances'
+require_relative 'translations'
 require_relative 'url'
 require_relative 'web_view'
 
@@ -11,8 +12,13 @@ require_relative 'web_view'
 # it. Nothing is written down until "Add" is clicked; the tab the view is
 # building exists, with its own session, but is not in the window's list.
 #
-# Ported from upstream's src/ViewNew.blp and src/ViewNew.js.
+# Ported from upstream's src/ViewNew.blp and src/ViewNew.js. The "Go" button
+# and the "example.org" entry placeholder are both plain strings in upstream's
+# blueprint too — neither is wrapped in `_()` there — so neither is marked
+# here.
 class ViewNew
+  include Translations
+
   CLAMP_MAXIMUM = 860
   CLAMP_TIGHTENING = 560
   ADDRESS_WIDTH_CHARS = 30
@@ -129,7 +135,7 @@ class ViewNew
   end
 
   def cancel_box = @cancel_box ||= Gtk::Box.new(:horizontal, 0)
-  def button_cancel = @button_cancel ||= Gtk::Button.new(label: 'Cancel')
+  def button_cancel = @button_cancel ||= Gtk::Button.new(label: _('Cancel'))
 
   def address_clamp
     @address_clamp ||= Adwaita::Clamp.new.tap do |clamp|
@@ -141,14 +147,14 @@ class ViewNew
   def entry_url
     @entry_url ||= Gtk::Entry.new.tap do |entry|
       entry.hexpand = true
-      entry.placeholder_text = 'Enter address'
+      entry.placeholder_text = _('Enter address')
       entry.input_purpose = :url
       entry.activates_default = true
     end
   end
 
   def button_done
-    @button_done ||= Gtk::Button.new(label: 'Add').tap do |button|
+    @button_done ||= Gtk::Button.new(label: _('Add')).tap do |button|
       button.sensitive = false
       button.add_css_class('suggested-action')
     end
@@ -373,8 +379,8 @@ class ViewNew
     def describe_status_page(first)
       if first
         status_page.icon_name = 're.sonny.Tangram'
-        status_page.title = WELCOME_TITLE
-        status_page.description = WELCOME_DESCRIPTION
+        status_page.title = _(WELCOME_TITLE)
+        status_page.description = _(WELCOME_DESCRIPTION)
       else
         status_page.icon_name = ''
         status_page.title = ''

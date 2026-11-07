@@ -1,0 +1,9 @@
+lib/about_dialog.rb
+lib/delete_tab_dialog.rb
+lib/instance_dialog.rb
+lib/main_menu.rb
+lib/shortcuts_dialog.rb
+lib/tabs.rb
+lib/view_new.rb
+lib/view_tabs.rb
+lib/web_view.rb

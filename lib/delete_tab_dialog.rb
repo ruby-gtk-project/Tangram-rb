@@ -2,6 +2,8 @@
 
 require 'adwaita'
 
+require_relative 'translations'
+
 # DeleteTabDialog asks whether the tab, and everything stored for it, should
 # go.
 #
@@ -9,6 +11,8 @@ require 'adwaita'
 # src/instanceDialog.js. Upstream awaits `choose`; the Ruby binding has the
 # `response` signal that promise wraps, which carries the same answers.
 class DeleteTabDialog
+  include Translations
+
   HEADING = 'Delete Tab?'
   BODY = 'The Tab and locally saved data will be gone.'
 
@@ -25,8 +29,8 @@ class DeleteTabDialog
 
   def build
     @build ||= dialog.tap do |alert|
-      alert.add_response(CANCEL, 'Cancel')
-      alert.add_response(DELETE, 'Delete')
+      alert.add_response(CANCEL, _('Cancel'))
+      alert.add_response(DELETE, _('Delete'))
       alert.set_response_appearance(DELETE, Adwaita::ResponseAppearance::DESTRUCTIVE)
 
       alert.signal_connect('response') do |_alert, response|
@@ -46,7 +50,7 @@ class DeleteTabDialog
   end
 
   def dialog
-    @dialog ||= Adwaita::AlertDialog.new(HEADING, BODY).tap do |alert|
+    @dialog ||= Adwaita::AlertDialog.new(_(HEADING), _(BODY)).tap do |alert|
       alert.close_response = CANCEL
     end
   end

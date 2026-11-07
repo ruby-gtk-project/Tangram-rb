@@ -3,6 +3,7 @@
 # One upstream source file maps to one file here, and this is the list of
 # them. Requiring "tangram" loads the port: the support and model layer
 # first, then the widgets built on it, then the application itself.
+require_relative 'translations'
 require_relative 'env'
 require_relative 'settings'
 require_relative 'state'

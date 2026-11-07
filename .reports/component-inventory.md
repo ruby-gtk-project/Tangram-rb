@@ -59,7 +59,7 @@ Two things below were wrong, both flagged already in
 | Keyboard shortcuts bound | 11 (8 via `Gtk.ShortcutController`, 3 via `set_accels_for_action`) | **11 — all present** (`lib/shortcuts.rb`) |
 | Shortcuts-window rows listed | 22 | 22 (`lib/shortcuts_dialog.rb`, as `Adw.ShortcutsDialog`) |
 | GSettings schemas | 2 (`re.sonny.Tangram`, `re.sonny.Tangram.Instance`) | both keysets reproduced in `lib/settings.rb`, JSON-backed, no `.gschema.xml` (deliberate divergence) |
-| `po/` catalogue | 21 languages, `re.sonny.Tangram.pot` | not set up — no `po/`, every string is a literal |
+| `po/` catalogue | 21 languages, `re.sonny.Tangram.pot` | **stale row — see Correction above.** `po/` now ships upstream's 21 languages unchanged; 53 of 78 msgids (every one with a Ruby-reachable site) are marked and translate on screen — `TRANSLATION_PARITY.md` has the full ledger |
 | Specs | `src/utils.test.js` | `spec/url_spec.rb` ports it; no spec for the newly-landed window/view/tab/web-view files yet |
 
 ---
@@ -97,7 +97,7 @@ Non-widget support files the components above need:
 | `src/webapp/webapp.js`, `src/webapp/ephy.js` | `lib/web_app_info.rb` | support | **yes** — the manifest/title/icon/URL probe `on_add_tab` awaits |
 | `troll/src/util.js` (`persistWindowState`, version helpers), `troll/src/async.js` | folded into `lib/settings.rb` / `lib/about_dialog.rb` | support | **yes, inferred** — `persist_window_state` and the version readers exist; the `troll` submodule is still not checked out, so neither was read against its real source |
 | `src/style.css` | `data/style.css`, loaded by `lib/tangram/application.rb` | stylesheet | **yes** — the `.tab-close-button` rule (hides the tab-overview thumbnail close buttons), loaded by a `Gtk::CssProvider` added to the display on `activate` |
-| `po/*` (21 languages) | translation setup | i18n | **no** — no `po/`, no gettext call, every ported string is a Ruby literal |
+| `po/*` (21 languages) | translation setup | i18n | **stale row — see Correction above.** `po/` and `lib/translations.rb` exist now; 53/78 msgids ported, 25 wait on `.gschema.xml`/`metainfo.xml`/`.desktop`, none of which exist in `data/` |
 | `src/utils.test.js` | `spec/url_spec.rb` | spec | **yes** — ports every `assert.is` line plus `normalize`/`allowed_for_navigation?`, which upstream never tested |
 | `src/webapp/test.js` | `spec/web_app_info_spec.rb` | spec | **yes (this round)** — all 9 scenarios, run the way upstream ran them: a real `WebKit::WebView` loading real HTTP responses from a local server, fed to `WebAppInfo.fetch`. Previously only 1 of 9 was covered, indirectly, via one `test/drive_new_tab.rb` step; see `test-parity.md` |
 
@@ -136,11 +136,23 @@ Non-widget support files the components above need:
    make for an origin upstream never pre-granted — is simply absent, not
    approximated.
 
+## Correction (this round)
+
+**Item 1 below is stale.** `po/` now exists: upstream's 21 `.po` files and
+`LINGUAS` are copied in unchanged, `lib/translations.rb` binds every marked
+string to the `re.sonny.Tangram` domain, and 53 of the 78 upstream msgids
+that have a Ruby-reachable site are marked and proven to translate on screen
+(`LANGUAGE=de` → `Tastaturkurzbefehle`, `Beenden`). The 25 gschema/metainfo/
+desktop-only keys remain open, because the port still has no `.gschema.xml`,
+`metainfo.xml` or `.desktop` file for them to live in — see
+`TRANSLATION_PARITY.md` for the full per-message ledger. The line below is
+left as the earlier pass wrote it, flagged rather than silently edited.
+
 ## Open items (not blockers — nothing here stops the app running)
 
 1. **No `po/` / gettext.** 21 upstream catalogues, zero on `ruby`. Every
    string a widget shows is a Ruby literal. This is `translation-parity`'s
-   job, not this survey's.
+   job, not this survey's. — **Stale; see Correction above.**
 2. **`troll` submodule still not checked out.** `persist_window_state` and
    the version-reading helpers in `lib/settings.rb`/`lib/about_dialog.rb` are
    written from the call sites in `window.js`/`AboutDialog.js`, not checked

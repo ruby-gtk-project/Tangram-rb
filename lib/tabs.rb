@@ -3,6 +3,7 @@
 require 'adwaita'
 
 require_relative 'instance_dialog'
+require_relative 'translations'
 require_relative 'web_view'
 
 # Tabs is the repeater over the tab view's pages: one page per tab, each
@@ -12,6 +13,8 @@ require_relative 'web_view'
 # Ported from upstream's src/tabs.js. Upstream's closure returns a bag of four
 # functions; here they are the four public methods, over the same tab view.
 class Tabs
+  include Translations
+
   AUDIO_ICON = 'audio-volume-high-symbolic'
   AUDIO_TOOLTIP = 'Playing Audio'
 
@@ -143,7 +146,7 @@ class Tabs
     def update_indicator(view, page)
       if view.playing_audio?
         page.indicator_icon = Gio::ThemedIcon.new(AUDIO_ICON)
-        page.indicator_tooltip = AUDIO_TOOLTIP
+        page.indicator_tooltip = _(AUDIO_TOOLTIP)
       else
         page.indicator_icon = nil
         page.indicator_tooltip = ''

@@ -4,6 +4,7 @@ require 'adwaita'
 
 require_relative 'main_menu'
 require_relative 'tabs'
+require_relative 'translations'
 
 # ViewTabs is the window's main view: the tabs themselves, the overview over
 # them, and the two header bars of navigation controls around them — a top one
@@ -21,6 +22,8 @@ require_relative 'tabs'
 # which the overview's `notify::open` drives and which `build` calls once so
 # the window opens in a consistent state.
 class ViewTabs
+  include Translations
+
   NAVIGATION_SPACING = 6
 
   # The bottom bar's back and forward buttons are wider than the top bar's, so
@@ -170,7 +173,7 @@ class ViewTabs
 
   def add_tab_content
     @add_tab_content ||= Adwaita::ButtonContent.new.tap do |content|
-      content.label = 'Add Tab'
+      content.label = _('Add Tab')
       content.icon_name = 'tab-new-symbolic'
     end
   end
@@ -183,33 +186,33 @@ class ViewTabs
     @navigation_box_bottom ||= Gtk::Box.new(:horizontal, NAVIGATION_SPACING)
   end
 
-  def button_back_top = @button_back_top ||= navigation_button('go-previous-symbolic', 'Back')
-  def button_forward_top = @button_forward_top ||= navigation_button('go-next-symbolic', 'Forward')
-  def button_reload_top = @button_reload_top ||= navigation_button(RELOAD_ICON, 'Reload')
-  def button_home_top = @button_home_top ||= navigation_button('go-home-symbolic', 'Homepage')
+  def button_back_top = @button_back_top ||= navigation_button('go-previous-symbolic', _('Back'))
+  def button_forward_top = @button_forward_top ||= navigation_button('go-next-symbolic', _('Forward'))
+  def button_reload_top = @button_reload_top ||= navigation_button(RELOAD_ICON, _('Reload'))
+  def button_home_top = @button_home_top ||= navigation_button('go-home-symbolic', _('Homepage'))
 
   def button_edit_top
-    @button_edit_top ||= navigation_button('view-more-symbolic', 'Edit Tab').tap do |button|
+    @button_edit_top ||= navigation_button('view-more-symbolic', _('Edit Tab')).tap do |button|
       button.action_name = 'win.editTab'
     end
   end
 
   def button_back_bottom
-    @button_back_bottom ||= navigation_button('go-previous-symbolic', 'Back').tap do |button|
+    @button_back_bottom ||= navigation_button('go-previous-symbolic', _('Back')).tap do |button|
       button.width_request = BOTTOM_BUTTON_WIDTH
     end
   end
 
   def button_forward_bottom
-    @button_forward_bottom ||= navigation_button('go-next-symbolic', 'Forward').tap do |button|
+    @button_forward_bottom ||= navigation_button('go-next-symbolic', _('Forward')).tap do |button|
       button.width_request = BOTTOM_BUTTON_WIDTH
     end
   end
 
-  def button_home_bottom = @button_home_bottom ||= navigation_button('go-home-symbolic', 'Homepage')
+  def button_home_bottom = @button_home_bottom ||= navigation_button('go-home-symbolic', _('Homepage'))
 
   def button_edit_bottom
-    @button_edit_bottom ||= navigation_button('view-more-symbolic', 'Edit Tab').tap do |button|
+    @button_edit_bottom ||= navigation_button('view-more-symbolic', _('Edit Tab')).tap do |button|
       button.action_name = 'win.editTab'
     end
   end
@@ -218,7 +221,7 @@ class ViewTabs
   # desktop-sized window has it in the title position.
   def toggle_overview_top
     @toggle_overview_top ||= Gtk::ToggleButton.new.tap do |button|
-      button.tooltip_text = 'Tabs Overview'
+      button.tooltip_text = _('Tabs Overview')
       button.child = overview_toggle_content
     end
   end
@@ -234,7 +237,7 @@ class ViewTabs
   def toggle_overview_bottom
     @toggle_overview_bottom ||= Gtk::ToggleButton.new.tap do |button|
       button.icon_name = 'tabs-stack-symbolic'
-      button.tooltip_text = 'Tabs Overview'
+      button.tooltip_text = _('Tabs Overview')
     end
   end
 
@@ -291,7 +294,7 @@ class ViewTabs
     def menu_button
       Gtk::MenuButton.new.tap do |button|
         button.icon_name = 'open-menu-symbolic'
-        button.tooltip_text = 'Main Menu'
+        button.tooltip_text = _('Main Menu')
         button.primary = true
         button.menu_model = main_menu.build
       end

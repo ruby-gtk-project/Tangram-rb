@@ -160,6 +160,36 @@ if kettle_jem_selftest_unavailable_note
   end
 end
 
+### TRANSLATION TASKS
+# Upstream's own po/ (re.sonny.Tangram.pot, LINGUAS, 21 *.po files) is reused
+# unchanged under its own domain; see TRANSLATION_PARITY.md. These tasks are
+# pure Ruby (the `gettext` gem), so they need nothing from the system beyond
+# GNU `msgfmt` for the `-c --check-format` pass `gettext:mo:check` runs.
+begin
+  require "gettext/tools/task"
+
+  GetText::Tools::Task.define do |task|
+    task.domain = "re.sonny.Tangram"
+    task.package_name = "re.sonny.Tangram"
+    task.files = Dir.glob("lib/**/*.rb") + Dir.glob("exe/*")
+    task.po_base_directory = "po"
+    task.mo_base_directory = "locale"
+    task.locales = File.read("po/LINGUAS").split
+  end
+
+  desc("Verify every po/*.po file compiles clean under GNU msgfmt's format checker")
+  task("gettext:mo:check") do
+    File.read("po/LINGUAS").split.each do |lang|
+      sh("msgfmt -c --check-format -o /dev/null po/#{lang}.po")
+    end
+  end
+rescue LoadError
+  desc("(stub) gettext tasks are unavailable")
+  task("gettext:mo:update") do
+    warn("NOTE: the gettext gem isn't installed in the current environment")
+  end
+end
+
 ### RELEASE TASKS
 # Setup stone_checksums
 begin

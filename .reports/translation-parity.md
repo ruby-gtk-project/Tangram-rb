@@ -53,3 +53,23 @@ Nothing in `component-identification.md` or `component-parity.md` is
 affected further by this beyond what they already note — both already flag
 every user-visible string in `lib/` as unmarked, consistent with this
 census.
+
+## Resolved this round
+
+**This verdict is stale.** `po/` now carries upstream's 21 `.po` files and
+`LINGUAS` unchanged, `lib/translations.rb` binds the `re.sonny.Tangram`
+domain, and every msgid with a Ruby-reachable site — 53 of the upstream's 78
+— is marked with `_()`/`N_()`/`p_()` and compiled to a `.mo` per language
+(`rake gettext:mo:update`; `rake gettext:mo:check` runs GNU `msgfmt -c
+--check-format` clean over all 21). Translation is verified on screen this
+round, not just in the catalogue: `MainMenu#_('Keyboard Shortcuts')` and
+`ShortcutsDialog#item('Quit', '')` both resolve to `de.po`'s strings under
+`LANGUAGE=de`.
+
+25 msgids remain open — every one whose only upstream site is
+`data/re.sonny.Tangram.gschema.xml`, `data/appdata/re.sonny.Tangram.metainfo.xml`
+or `data/re.sonny.Tangram.desktop`, none of which exist in this port's
+`data/` directory. That is a real, named gap, not a decision — see
+`TRANSLATION_PARITY.md` at the repo root for the full per-message ledger,
+the per-file tables, and the "Extra" and "Unresolved" sections this document's
+own rules require.

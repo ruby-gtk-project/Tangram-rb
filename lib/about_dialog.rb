@@ -4,6 +4,7 @@ require 'adwaita'
 require 'gobject-introspection'
 
 require_relative 'tangram/rb/version'
+require_relative 'translations'
 
 # The engine versions the debug info lists come from the typelibs themselves,
 # the way troll's `getGIRepositoryVersion` reads them.
@@ -26,14 +27,18 @@ end
 # and `getGLibVersion` — folded in as `debug_info`. Upstream's GJS line
 # becomes a Ruby line, and its GStreamer line is left out: this port has no
 # GStreamer binding to ask, and inventing a number would be worse than
-# listing one fewer. Upstream's `translator_credits` is left out for the same
-# reason: it is a translated string, and the translations arrive with the po/
-# setup.
+# listing one fewer.
+#
+# Upstream's `translator_credits` is the conventional `"translator-credits"`
+# msgid: each language's `.po` translates it to that language's own list of
+# names, and `Adw.AboutDialog` shows it as the dialog's own "Translated by"
+# page once set.
 #
 # Upstream builds an Adw.AboutWindow, deprecated since libadwaita 1.6 in
 # favour of Adw.AboutDialog, which is what this uses; the properties are the
 # same ones.
 class AboutDialog
+  include Translations
   APPLICATION_NAME = 'Tangram'
   DEVELOPER_NAME = 'Sonny Piers'
   COPYRIGHT = '© 2019-2023 Sonny Piers'
@@ -56,7 +61,7 @@ class AboutDialog
   # run, and a credit section added twice would be listed twice.
   def build
     @build ||= dialog.tap do |about|
-      about.add_credit_section('Contributors', CONTRIBUTORS)
+      about.add_credit_section(_('Contributors'), CONTRIBUTORS)
     end
   end
 
@@ -75,6 +80,7 @@ class AboutDialog
       about.application_icon = APPLICATION_ICON
       about.issue_url = ISSUE_URL
       about.debug_info = debug_info
+      about.translator_credits = _('translator-credits')
       about.developers = DEVELOPERS
       about.designers = DESIGNERS
       about.artists = ARTISTS

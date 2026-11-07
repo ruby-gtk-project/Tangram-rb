@@ -2,6 +2,8 @@
 
 require 'adwaita'
 
+require_relative 'translations'
+
 # ShortcutsDialog lists the keyboard shortcuts, behind the main menu's
 # "Keyboard Shortcuts" and <Control>question.
 #
@@ -15,7 +17,16 @@ require 'adwaita'
 # Two of upstream's items are gestures rather than accelerators
 # (`gesture_two_finger_swipe_right` and `_left`). Adw.ShortcutsItem has no
 # gesture type, so each is listed with the gesture named in its subtitle.
+#
+# Every title and label below carries upstream's "shortcut window" msgctxt —
+# `C_("shortcut window", ...)` there, `p_("shortcut window", ...)` here —
+# because a handful of these strings (the two gesture rows' labels) repeat
+# plain navigation strings used elsewhere without a context, and a bare `_()`
+# would collide with the wrong catalogue entry.
 class ShortcutsDialog
+  include Translations
+
+  CONTEXT = 'shortcut window'
   SECTIONS = [
     [
       'Tabs',
@@ -80,7 +91,7 @@ class ShortcutsDialog
 
     def section(title, items)
       Adwaita::ShortcutsSection.new.tap do |section|
-        section.title = title
+        section.title = p_(CONTEXT, title)
         items.each { |label, accelerator| section.add(item(label, accelerator)) }
 
         if title == GESTURE_SECTION
@@ -91,7 +102,7 @@ class ShortcutsDialog
 
     # Positional, not keyword, arguments — even though the error a no-argument
     # new raises advertises the signatures as "title: utf8, accelerator: utf8".
-    def item(label, accelerator) = Adwaita::ShortcutsItem.new(label, accelerator)
+    def item(label, accelerator) = Adwaita::ShortcutsItem.new(p_(CONTEXT, label), accelerator)
 
     def gesture_item(label, gesture)
       item(label, '').tap { |shortcut| shortcut.subtitle = gesture }

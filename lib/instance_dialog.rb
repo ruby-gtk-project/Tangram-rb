@@ -4,17 +4,25 @@ require 'adwaita'
 
 require_relative 'delete_tab_dialog'
 require_relative 'settings'
+require_relative 'translations'
 
 # InstanceDialog edits one tab: its name, its homepage, the priority its
 # notifications are sent with, the user agent it presents, and the button that
 # deletes it.
 #
 # Ported from upstream's src/instanceDialog.blp and src/instanceDialog.js.
+#
+# `button_delete`'s "Delete Tab" label is one of the few upstream strings in
+# this file with no `_()` around it in the blueprint — left untranslated
+# there, so left untranslated here.
 class InstanceDialog
+  include Translations
+
   CONTENT_WIDTH = 640
 
   # The strings of the combo row's model, in the order of the schema's
-  # notification-priority enum.
+  # notification-priority enum. Held as plain English here and translated
+  # per-string when the model is built, in `priority_row`.
   PRIORITIES = %w[Normal Low High Urgent].freeze
 
   # `on_delete` is the window's tab deletion, which takes a tab id.
@@ -87,10 +95,10 @@ class InstanceDialog
     end
   end
 
-  def button_cancel = @button_cancel ||= Gtk::Button.new(label: 'Cancel')
+  def button_cancel = @button_cancel ||= Gtk::Button.new(label: _('Cancel'))
 
   def button_save
-    @button_save ||= Gtk::Button.new(label: 'Update').tap do |button|
+    @button_save ||= Gtk::Button.new(label: _('Update')).tap do |button|
       button.add_css_class('suggested-action')
     end
   end
@@ -117,14 +125,14 @@ class InstanceDialog
 
   def name_row
     @name_row ||= Adwaita::EntryRow.new.tap do |row|
-      row.title = 'Name'
+      row.title = _('Name')
       row.text = instance.name
     end
   end
 
   def url_row
     @url_row ||= Adwaita::EntryRow.new.tap do |row|
-      row.title = 'Homepage'
+      row.title = _('Homepage')
       row.input_purpose = :url
       row.text = instance.url
     end
@@ -132,15 +140,15 @@ class InstanceDialog
 
   def priority_row
     @priority_row ||= Adwaita::ComboRow.new.tap do |row|
-      row.title = 'Notifications priority'
-      row.model = Gtk::StringList.new(PRIORITIES)
+      row.title = _('Notifications priority')
+      row.model = Gtk::StringList.new(PRIORITIES.map { |label| _(label) })
       row.selected = instance.notifications_priority
     end
   end
 
   def user_agent_row
     @user_agent_row ||= Adwaita::EntryRow.new.tap do |row|
-      row.title = 'User agent'
+      row.title = _('User agent')
       row.text = instance.user_agent
     end
   end
