@@ -62,3 +62,33 @@ comparison, and the shortcuts/menu enumeration in the existing inventory were
 spot-checked (not fully re-counted) and found consistent with the source.
 `component-parity.md` carries the four-axis judgement; this document is the
 unit list and file map only.
+
+## Verified this round (2026-11-07, independent re-audit)
+
+Re-checked from scratch, not just re-read:
+
+- `git show origin/master:README.md` → `fatal: invalid object name` (still
+  true); `git branch -r` lists no `master`. `origin/main` @ `d68f681` is
+  confirmed the only candidate upstream, same as this document already
+  concluded.
+- The 13-unit list and the 21-file `lib/` map were re-walked against
+  `git ls-tree -r --name-only origin/main` and `find lib -type f`. No new
+  upstream unit found, no port file missing.
+- The "false-green cell" this document flagged in `component-inventory.md`
+  row 13 is now actually fixed: `lib/web_view.rb:183-184` registers
+  `tangram-resource` for real (`register_uri_scheme_as_local` +
+  `register_uri_scheme`), confirmed by reading the lines directly.
+
+One thing this document and `component-inventory.md` both leave unsaid,
+surfaced here rather than silently added to either: upstream ships
+`data/re.sonny.Tangram.desktop`, `data/appdata/re.sonny.Tangram.metainfo.xml`
+and `data/re.sonny.Tangram.service` (D-Bus activation) — `git ls-tree -r
+--name-only origin/main | grep ^data/` lists all three. None exist anywhere
+in this port (`find . -iname '*.desktop' -o -iname '*metainfo*'` → nothing).
+This is not scored as a 14th component unit — the task's own component axes
+(window/dialog/page/menu/shortcut/preference/action/empty-state/error-state)
+are in-app GUI surface, and the `translation-parity` skill's own worked
+example (`gnome-contacts-rb`) treats a missing `data/` directory the same
+way: a translation-catalogue gap, not a missing window. Recorded here only
+so the omission is visible from the component side too, not just inherited
+through `translation-parity.md`'s msgid ledger.

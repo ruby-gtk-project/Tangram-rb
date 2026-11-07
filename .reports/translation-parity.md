@@ -73,3 +73,24 @@ or `data/re.sonny.Tangram.desktop`, none of which exist in this port's
 `TRANSLATION_PARITY.md` at the repo root for the full per-message ledger,
 the per-file tables, and the "Extra" and "Unresolved" sections this document's
 own rules require.
+
+## Verified this round (2026-11-07, independent re-audit)
+
+- `find . -iname po -o -iname '*.pot' -o -iname '*.po'` now lists `po/`,
+  all 21 `.po` files plus `LINGUAS` and `POTFILES`, and
+  `po/re.sonny.Tangram.pot` — confirming the "resolved this round" claim
+  that the catalogue exists is true, not stale.
+- `find data -type f` (the port's actual `data/` dir, not upstream's) finds
+  only `data/style.css` and the two icon SVGs — no `.desktop`, no
+  `.metainfo.xml`, no `.gschema.xml`. Confirms the 25-msgid gap this
+  document attributes to those three missing files is real: there is
+  nowhere in this port those 25 strings could even live.
+- `TRANSLATION_PARITY.md` exists at the repo root (280 lines) and its
+  headline table (`53/53` Ruby-reachable keys ported, `25` gap,
+  `21/21` languages) matches what this document's own "Resolved this round"
+  section states. Cross-checked, not just cited.
+
+**Still not clean.** 25 of 78 upstream msgids have no path to survive in
+this port today, for a plain, named reason (no `data/` packaging files
+exist here at all) rather than an excuse. This is the one open item this
+document carries forward unchanged.

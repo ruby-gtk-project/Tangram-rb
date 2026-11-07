@@ -126,3 +126,27 @@ Two of the three behaviour/style gaps above are closed:
 The only behaviour/style item still open is the one piece of gap 1 named
 above (`initialize-notification-permissions`), plus the text axis, which
 `translation-parity.md` still finds not met.
+
+## Verified this round (2026-11-07, independent re-audit)
+
+Reproduced rather than re-read:
+
+- `grep -n "register_uri_scheme\|initialize_notification_permissions\|permission-request" lib/web_view.rb`
+  confirms both: the scheme registration call is present at lines 183-184,
+  and `initialize_notification_permissions` is *not* called anywhere —
+  only described, in the class comment, as unported. The honest-gap
+  language holds up against the code, not just against itself.
+- `grep -n "CssProvider\|style.css" lib/tangram/application.rb` confirms
+  `style_provider` loads `data/style.css` via `Gtk::CssProvider`, matching
+  the "resolved this round" claim for the `.tab-close-button` gap.
+- Did not re-attempt the `initialize_notification_permissions` segfault
+  reproduction (calling a WebKit method already reported to crash the
+  process is not worth re-running inside this audit's own session); taking
+  the prior reproduction's account as read rather than independently
+  re-crashing it is a real limit on this verification, noted rather than
+  hidden.
+
+No new behaviour/style/count gap found beyond what this document already
+carries. Still not clean: the `initialize-notification-permissions`
+auto-grant remains unported, and the text axis still fails per
+`translation-parity.md`.

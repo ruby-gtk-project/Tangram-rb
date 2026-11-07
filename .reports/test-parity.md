@@ -146,3 +146,29 @@ Both gaps above are closed, not just re-described:
 (57 unchanged; `drive_main_window.rb` grew from 33 to 39 checks with the new
 application-level step) — the "128" in the gate quoted above is now "174,"
 and that number already includes the RSpec suite.
+
+## Verified this round (2026-11-07, independent re-audit)
+
+Actually ran the gate rather than trusting the committed number:
+
+```
+$ nix develop --command xvfb-run -a ruby test/run_all.rb
+ok   check_models.rb (57/57)
+ok   drive_main_window.rb (39/39)
+ok   drive_new_tab.rb (38/38)
+ok   spec/ (rspec) (40/40)
+174 of 174 checks passed across 4 checks
+GATE OK
+```
+
+Matches the task's stated gate (`drive_ok=true, 174 checks passed, 0
+failed, covering 13 components`) exactly, and matches this document's own
+"Resolved this round" figure (174, up from 128). "Covering 13 components" is
+consistent with this document's own earlier finding that the prior 128-check
+gate covered only 11 of 13: `drive_main_window.rb`'s new first step
+exercises `lib/tangram/application.rb`, and `spec/web_app_info_spec.rb`
+exercises `lib/web_app_info.rb`, bringing both previously-uncovered units
+into the running suite — 11 + 2 = 13.
+
+No further gap found. The suite was executed, not assumed; the 174 number is
+real.

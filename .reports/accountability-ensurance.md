@@ -120,3 +120,36 @@ Both findings are fixed, not just re-flagged:
 Finding 3 (the `app.restart` comment) was left as recorded — the finding
 itself says no action is needed since the substance checks out; only the
 phrasing habit was worth naming, and it was named, not fixed, there too.
+
+## Verified this round (2026-11-07, independent re-audit)
+
+Re-ran the scan against the current tree:
+
+```sh
+$ grep -rniE "TODO|FIXME|not implemented|for now|in a future" lib/ exe/ .reports/ PORTING.md TRANSLATION_PARITY.md
+(no hits outside this report's own grep examples)
+```
+
+No new false-green or excuse-language hit found beyond what the prior round
+already fixed. Specifically checked and found honest, not excused:
+
+- `lib/web_view.rb`'s class comment (rewritten per Finding 2's "resolved
+  this round") now states the `initialize-notification-permissions` gap as
+  owed work backed by a reproduced segfault, not a decision — read directly,
+  confirmed, no decision-language relapse.
+- `test-parity.md` and `component-parity.md`'s own "Resolved this round"
+  sections were checked against the actual code and the actual test run
+  (see those documents' own "Verified this round" sections) rather than
+  taken on their own word — both held up.
+- `component-identification.md`'s newly-added note on the missing
+  `.desktop`/metainfo/`.service` files (this round) is itself an example of
+  the gap being named rather than folded silently into an existing
+  "ported" claim — checked that no other document's totals table counts
+  those files as present anywhere.
+
+## Verdict (unchanged)
+
+Not clean. Two real, named gaps remain across the other four reports
+(`initialize-notification-permissions`, 25/78 msgids), both disclosed as
+gaps rather than dressed as decisions. No false-green claim survives in any
+committed report as of this round.
