@@ -7,7 +7,7 @@
 | Domain | `re.sonny.Tangram` |
 | Upstream messages (whole catalogue: `lib/`-reachable + data-file-only) | 78 |
 | Ported (Ruby-reachable keys, i.e. every key with at least one site in a `.blp`/`.js` file this port has a `lib/*.rb` counterpart for) | **53 / 53** |
-| Gaps (keys whose only sites are `data/re.sonny.Tangram.gschema.xml`, `data/appdata/re.sonny.Tangram.metainfo.xml` or `data/re.sonny.Tangram.desktop`) | 16 (9 of the 10 `.desktop`/`metainfo.xml`-only keys now have a site — see **Resolved this round** below; 15 `.gschema.xml`-only keys plus the one screenshot caption this port ships no screenshot for do not) |
+| Gaps (keys whose only sites are `data/re.sonny.Tangram.gschema.xml`, `data/appdata/re.sonny.Tangram.metainfo.xml` or `data/re.sonny.Tangram.desktop`) | **15** — all 10 of the `.desktop`/`metainfo.xml`-only keys now have a site, including the `Tabs overview` screenshot caption (`b73806d` added the `<screenshots>` block with that caption text; see **Found this round (round 3)** below, which corrects this row from the 16 the previous two rounds carried). Only the 15 `.gschema.xml`-only keys remain structurally homeless. None of the 10 `.desktop`/`metainfo.xml` keys are wired through gettext — they are English-literal, not translated, in all 21 languages. |
 | Extra (port messages upstream never marks) | 2 (`Delete` response label, the two gesture-row subtitles — see **Extra** below) |
 | Upstream languages | 21 `.po` files, `LINGUAS` matches exactly |
 | Languages shipped by the port | **21 / 21** — `po/*.po` copied from upstream unchanged, compiled to `locale/<lang>/LC_MESSAGES/re.sonny.Tangram.mo` |
@@ -233,11 +233,28 @@ That closes the "no Ruby site to attach them to" problem for 9 of the 10
 `.desktop`/`metainfo.xml`-only msgids above: `Tangram`, `Browser for your
 pinned tabs`, `Franz;Ferdi;…`, `Tangram is a new kind of browser…`, `Common
 use cases:` and the four use-case bullets — a real site for them now exists
-in this port, where none did before. The tenth, `Tabs overview`, is
-upstream's screenshot `<caption>`; this port's `metainfo.xml` ships no
-`<screenshots>` section at all, because `data/appdata/desktop.png` (the
-screenshot it would caption) was never ported either — so that one msgid
-is still open, for the same reason the asset it describes is not here.
+in this port, where none did before.
+
+### Found this round (round 3): the tenth key, `Tabs overview`, now has a site too
+
+This section originally continued by calling the tenth key, `Tabs
+overview` (upstream's screenshot `<caption>`), still open, reasoning that
+this port's `metainfo.xml` shipped no `<screenshots>` section because
+`data/appdata/desktop.png` was never ported. `b73806d` ("Port
+metainfo.xml's release history, screenshot and branding") added that
+`<screenshots>` section, with the caption text copied verbatim
+(`<caption>Tabs overview</caption>`, confirmed directly in
+`data/appdata/re.sonny.Tangram.metainfo.xml:36`). The `<image>` it captions
+is a remote AppStream URL (`raw.githubusercontent.com/.../desktop.png`),
+not a packaged local file, so "no local asset to caption" was never quite
+the right reasoning for this one even before the fix — the caption and the
+image reference are metadata, independent of whether this port ships the
+PNG itself. By this ledger's own rule for the other 9 `.desktop`/`metainfo.xml`
+keys, English text present in a file the port ships counts as "has a
+site." The gap is **15, not 16** as of this commit; this document and
+`.reports/translation-parity.md` both went one commit stale before this
+round caught it up. `Tabs overview` is still English-only, same as the
+other 9 — no `.mo` path exists for AppStream metadata in this toolchain.
 
 What this does **not** do is make those files' strings reachable through
 `po/*.po` the way `lib/*.rb`'s `_()` calls are. A `.desktop` file is

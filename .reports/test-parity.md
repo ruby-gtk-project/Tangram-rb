@@ -172,3 +172,58 @@ into the running suite — 11 + 2 = 13.
 
 No further gap found. The suite was executed, not assumed; the 174 number is
 real.
+
+## Found this round (2026-11-07, round 3): the gate is flaky, and the prior round's confidence in "174, 0 failed" was overstated
+
+Re-ran `nix develop --command xvfb-run -a ruby test/run_all.rb` four times
+independently, to check whether the prior round's single green run was
+representative:
+
+```
+run 1: FAIL spec/ (rspec) (0/0)  →  134 of 134 checks passed across 4 checks  →  GATE FAILED
+run 2: ok   spec/ (rspec) (40/40) →  174 of 174 checks passed across 4 checks →  GATE OK
+run 3: ok   spec/ (rspec) (40/40) →  174 of 174 checks passed across 4 checks →  GATE OK
+run 4: (see below)
+```
+
+Run 1's captured output shows the RSpec subprocess printing its 40
+progress dots (`........................................`) and then
+nothing — no "Finished in N seconds" line, no "N examples, N failures"
+line — before `run_all.rb`'s parent process read the tempfile back and
+moved on. `run_all.rb`'s own regex (`/(\d+) examples?, (\d+) failures?/`)
+never matches on a truncated capture, so `total` and `passed` both come
+back `0`, the check is marked `FAIL (0/0)`, and the whole gate fails even
+though every example that got to run, passed. Running the identical RSpec
+invocation standalone (outside `run_all.rb`'s `Process.spawn`-to-tempfile
+capture) immediately afterward printed the summary line cleanly
+(`40 examples, 0 failures`) — this is not the suite failing, it is the
+*harness's capture of the suite* failing intermittently, which the script's
+own comments already flag as a known WebKitGTK multi-process fragility
+("GTK and WebKitGTK are not meant to be initialized twice in one process")
+without this exact failure mode (the summary line itself going missing,
+independent of the process's exit status) having been caught before.
+
+**What this changes:** the previous "Verified this round" section above
+ran the gate once, got `GATE OK`, and wrote "No further gap found... the
+174 number is real" — true of that one run, but stated with more
+confidence than a single sample supports for a harness its own source
+comments already describe as fragile under WebKitGTK re-initialization.
+This round's 4 runs: 3 green, 1 red, same code, same tree, nothing
+committed in between. A ~25% failure rate on the committed gate command is
+itself a parity gap under this task's own rule — *"a failed or narrow
+drive run as a parity gap in its own right."* The task's stated gate
+(`174 checks passed, 0 failed`) is a real, reachable outcome, not a
+fabrication, but it is not the *only* outcome the exact same command
+produces on this exact tree, and no document before this round disclosed
+that.
+
+**Not yet root-caused.** This round locates the failure precisely (the
+RSpec child's final summary line not reaching the tempfile `run_all.rb`
+reads, specifically — not a real test failure, not a flaky assertion) but
+does not fix it. A real fix needs either a retry loop in `run_all.rb`, a
+fsync/flush guarantee on the child's stdout before it exits, or switching
+the RSpec invocation to a machine-readable formatter (`--format json`)
+that fails loudly on a truncated read rather than silently producing
+`(0/0)`. None of that is done here — this is a finding, not a patch, and
+is recorded as owed work rather than fixed under this audit's own
+authority.

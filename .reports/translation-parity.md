@@ -127,3 +127,44 @@ Two findings, one fix each — both detailed in full in `TRANSLATION_PARITY.md`:
   nothing reads would be an inert, unwired component, not a fix), plus one
   screenshot caption for a screenshot (`data/appdata/desktop.png`) this port
   does not ship either.
+
+## Found this round (2026-11-07, round 3) — this document's own "16" went stale one commit after it was written
+
+`b73806d` ("Port metainfo.xml's release history, screenshot and branding"),
+landed *after* this document and `TRANSLATION_PARITY.md` were last edited
+(both stop at `87ed0b8`/`9979d0d`), added a `<screenshots>` block to
+`data/appdata/re.sonny.Tangram.metainfo.xml` with a real `<caption>Tabs
+overview</caption>` — copied verbatim from `origin/main`, confirmed by
+`git show origin/main:data/appdata/re.sonny.Tangram.metainfo.xml` and by
+reading the port's own file directly (`grep -n "Tabs overview"
+data/appdata/re.sonny.Tangram.metainfo.xml:36`).
+
+That means the sentence this document and `TRANSLATION_PARITY.md` both
+still carry — *"the tenth, `Tabs overview`, is upstream's screenshot
+`<caption>`; this port's `metainfo.xml` ships no `<screenshots>` section at
+all... so that one msgid is still open"* — is **false as of the current
+tree**, not merely stale phrasing: the file it describes as absent is
+present, with that exact caption text in it. By this document's own
+standard for the other 9 `.desktop`/`metainfo.xml` keys (English-literal
+text in a file the port ships counts as "has a site," even though it is
+not wired through gettext), `Tabs overview` now has a site too. The open
+count is **15, not 16** — 15 `.gschema.xml`-only keys, nothing else. It
+remains unmarked for translation, same as the other 9: there is no `.mo`
+path for AppStream metadata in this port's pure-Ruby gettext toolchain, so
+it still renders English-only in all 21 languages. That half of the old
+claim stands; only the "no site at all" half was wrong.
+
+No commit between `b73806d` and now touched `.reports/translation-parity.md`
+or `TRANSLATION_PARITY.md` to reflect this — the correction in this section
+is the first time either document catches up to it. `.reports/component-inventory.md`
+has the matching stale claim (its "Open items" #5 calls the releases/screenshot
+work "not re-ported," which `b73806d`'s own commit message explicitly says
+it closes); flagged here and corrected there, not duplicated in full.
+
+**Updated headline:** 54/78 msgids now have a site a user could in
+principle see translated if the packaging formats were wired to gettext
+(53 `lib/*.rb`-reachable + 1 screenshot caption); 15 remain structurally
+homeless (`.gschema.xml`-only). Of the 54, only the 53 are actually marked
+with `_()`/`N_()`/`p_()` and shipped in 21 languages — the caption, like the
+other 9 data-file strings, is English-only text, not a translated one. The
+verdict is unchanged: **not clean.**

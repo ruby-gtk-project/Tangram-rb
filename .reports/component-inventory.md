@@ -200,11 +200,26 @@ top of this file for what changed.
    nested file left; moving it to flat `lib/application.rb` with a top-level
    `Application` class would match every other ported file and the pilot's
    house shape exactly.
-5. **`metainfo.xml`'s `<releases>` history and screenshot entry not re-ported.**
-   The ported `metainfo.xml` carries `summary`/`description`/use-cases but
-   not upstream's version-history `<releases>` block or its one
-   `<screenshot>` (which points at `data/appdata/desktop.png`, a file this
-   port does not ship). Neither blocks the app; both are real, named gaps.
+5. **Resolved by `b73806d` ("Port metainfo.xml's release history,
+   screenshot and branding"), which landed after this item was written and
+   is not reflected anywhere else in this file's totals/component tables.**
+   This item used to read: *"`metainfo.xml`'s `<releases>` history and
+   screenshot entry not re-ported... both are real, named gaps."* `b73806d`
+   added the full `<releases>` version history, the `<screenshot>` entry
+   (an AppStream `<image>` pointing at upstream's remote
+   `raw.githubusercontent.com/.../desktop.png`, so no local asset is
+   needed), the extra `<url>` kinds, `<update_contact>` and `<branding>`
+   colors, all copied verbatim from `origin/main` (the `bugtracker`/
+   `vcs-browser` URLs deliberately kept pointing at this fork, matching
+   the pre-existing divergence). `diff <(git show
+   origin/main:data/appdata/re.sonny.Tangram.metainfo.xml)
+   data/appdata/re.sonny.Tangram.metainfo.xml` now shows only those two
+   intentional URL lines differing — everything else is byte-identical.
+   Leaving this item as "not re-ported" here would itself be a stale claim
+   contradicting the current tree; see `.reports/accountability-ensurance.md`
+   for the parallel miss this same gap produced in
+   `TRANSLATION_PARITY.md`/`translation-parity.md` (the screenshot's
+   `<caption>` msgid, which this change also added).
 
 ## History
 

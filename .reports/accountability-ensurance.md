@@ -147,9 +147,75 @@ already fixed. Specifically checked and found honest, not excused:
   "ported" claim — checked that no other document's totals table counts
   those files as present anywhere.
 
-## Verdict (unchanged)
+## Verdict (unchanged, when the above was written)
 
 Not clean. Two real, named gaps remain across the other four reports
 (`initialize-notification-permissions`, 25/78 msgids), both disclosed as
 gaps rather than dressed as decisions. No false-green claim survives in any
 committed report as of this round.
+
+## Found this round (2026-11-07, round 3) — two stale claims, and one overstated "verified" that didn't reproduce
+
+This round re-ran the gate and re-diffed the port against `origin/main`
+rather than re-reading the prior round's prose, on the theory that a
+report's own confidence is not evidence. Three things surfaced, none of
+them hidden on purpose, all three a failure to re-check a claim against a
+commit that landed after the claim was written:
+
+1. **A stale "still open" claim, one commit after it stopped being
+   true.** `.reports/component-inventory.md`'s Open item 5 and
+   `TRANSLATION_PARITY.md`/`.reports/translation-parity.md`'s "one
+   screenshot caption this port ships no screenshot for" both describe
+   `metainfo.xml`'s `<releases>`/`<screenshot>` block as unported.
+   `b73806d` ("Port metainfo.xml's release history, screenshot and
+   branding") ported it — its own commit message names
+   `component-inventory.md` item 5 as the gap it closes — but no commit
+   after `b73806d` touched either translation document or re-checked
+   `component-inventory.md`'s own open-items list against the file it was
+   describing. Both are corrected in this round (see those documents'
+   "Found this round" sections and `component-inventory.md`'s item 5).
+   This is the opposite shape from a false green (it understates progress
+   rather than overstating it), but it is the same root failure this skill
+   exists to catch: a claim about the code that was never re-checked
+   against the code after the code changed.
+2. **A related accounting error that followed from (1).** `TRANSLATION_PARITY.md`'s
+   headline "16 gaps" and `.reports/translation-parity.md`'s matching
+   figure both carried one msgid (`Tabs overview`) as having no site, when
+   `b73806d` gave it one. The true count is 15. A reader who took either
+   document's 16 at face value would be off by one on the one number this
+   whole audit exists to get right.
+3. **"Verified this round... the 174 number is real" (`test-parity.md`,
+   prior round) was true of the one run it was based on, and did not
+   reproduce on an independent re-run this round.** Running the exact
+   committed gate command (`nix develop --command xvfb-run -a ruby
+   test/run_all.rb`) the first time this round produced `GATE FAILED` —
+   134 of 134, not 174, with the RSpec check reporting `(0/0)` despite its
+   own output showing 40 passing dots. Three further runs on the identical
+   tree then came back `GATE OK`/174/174. This is not a fabricated claim —
+   the prior round's author did run the gate and did see it pass — but
+   writing "the 174 number is real" and "no further gap found" off a
+   single green run, for a harness whose own source comments already warn
+   about WebKitGTK multi-process fragility, is exactly the overconfidence
+   this skill looks for: a true observation stated with more certainty
+   than one sample earns. Detailed in `test-parity.md`'s own "Found this
+   round" section, including the exact failure mechanism (a truncated
+   subprocess-output capture, not a real test failure). This round's own
+   gate claim is stated as what it is — 3 of 4 runs green, not "the gate
+   passes."
+
+None of the three is a fabricated record or an invented pass; all three
+are claims that were accurate at the moment they were written and were
+never revisited against a tree, or a rerun, that had since moved past
+them. That gap — between "true when checked" and "still being presented
+as current" — is the thing this round adds to the list of things this
+skill watches for.
+
+## Verdict
+
+Still not clean. The runtime gate itself is now a named gap (flaky, not
+reliably 174/174), the `.gschema.xml` translation shortfall is 15 msgids
+not 16 but is still a shortfall, and `initialize-notification-permissions`
+remains unported. Three stale/overconfident claims found and corrected
+this round, in the reports themselves rather than only in this one; none
+of them was a decision dressed as settled, and none survives uncorrected
+past this commit.
