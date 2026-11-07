@@ -78,8 +78,40 @@ end
 # list segfaults the process — confirmed by calling it directly under this
 # port's own GI loader (`WebKit::WebContext#initialize_notification_permissions`
 # with one `WebKit::SecurityOrigin` crashes every time; an empty list is the
-# only list that does not). There is no workaround in the Ruby bindings as
-# they stand, so this is simply not ported. `permission-request` below allows
+# only list that does not).
+#
+# This is root-caused now, not just reproduced: it is a bug in the
+# `gobject-introspection` gem itself (not in WebKit, and not specific to this
+# method), confirmed by reading its C source
+# (`rb_gi_arguments_in_init_arg_ruby_list` in
+# `ext/gobject-introspection/rb-gi-arguments-in.c`, gobject-introspection
+# 4.3.9). For a GI method argument typed `GList<some interface>`, that
+# function always converts the Ruby array with `RVAL2GOBJGLIST` and then
+# walks the resulting `GList`, calling `G_TYPE_CHECK_INSTANCE_TYPE` on each
+# node's `data` — both of which assume every element is a `GObject`, reading
+# a `GTypeInstance` header off the front of whatever `node->data` points to.
+# `WebKitSecurityOrigin` is a plain `GBoxed` (ref-counted, no `GObject`
+# header), so that macro dereferences memory that was never laid out as one,
+# which is exactly the segfault reproduced above. The same crash would hit
+# *any* GI method taking a `GList`/`GSList` of boxed (as opposed to
+# GObject-derived) elements — this is not a WebKit-specific limitation, it
+# is this gem's `GList`-of-boxed marshalling in general. A reproduction
+# script that isolates this (deliberately, by crashing) lives at
+# `test/webkit_notification_permissions_segfault_repro.rb` and is not part
+# of the test gate for that reason; it exists so the crash can be cited
+# verbatim when filing this upstream.
+#
+# There is no workaround available from pure Ruby — the broken step is the
+# GI argument marshaller itself, which runs inside the C extension before
+# any Ruby code for this call gets a chance to run, so there is nothing to
+# intercept from this side. (An FFI call straight into
+# `libwebkit2gtk-6.0.so`, bypassing GI for this one call, was considered; it
+# would still need a raw pointer for the already-GI-wrapped `WebContext` and
+# `SecurityOrigin` Ruby objects to hand to it, and neither `glib2` nor
+# `gobject-introspection` exposes one — there is no supported way to get a C
+# pointer back out of a Ruby object they already wrap, short of relying on
+# their internal memory layout, which is not something a port should build
+# on.) So this is simply not ported. `permission-request` below allows
 # every notification permission request outright, which reaches the same
 # end state as upstream's pre-grant for the one case it covers, but is not a
 # port of the handler itself — a user-visible permission prompt upstream

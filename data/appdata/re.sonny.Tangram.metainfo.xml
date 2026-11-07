@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<component type="desktop-application">
+  <id>re.sonny.Tangram</id>
+  <launchable type="desktop-id">re.sonny.Tangram.desktop</launchable>
+  <name>Tangram</name>
+  <developer id="re.sonny">
+    <name translatable="no">Sonny Piers</name>
+  </developer>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0</project_license>
+  <summary>Browser for your pinned tabs</summary>
+  <translation type="gettext">re.sonny.Tangram</translation>
+  <description>
+    <p>
+      Tangram is a new kind of browser. It is designed to organize and run your Web applications.
+      Each tab is persistent and independent. You can set multiple tabs with different accounts for the same application.
+    </p>
+    <p>Common use cases:</p>
+    <ul>
+      <li>Stay up to date with your favorite communities</li>
+      <li>Merge all these chat applications into one</li>
+      <li>Group your organization tools under one application</li>
+      <li>One-stop for multiple sources of documentation or information</li>
+    </ul>
+  </description>
+  <url type="homepage">https://tangram.sonny.re</url>
+  <url type="bugtracker">https://github.com/ruby-gtk-project/Tangram-rb/issues</url>
+  <content_rating type="oars-1.1" />
+  <kudos>
+    <kudo>HiDpiIcon</kudo>
+    <kudo>HighContrast</kudo>
+    <kudo>ModernToolkit</kudo>
+    <kudo>Notifications</kudo>
+  </kudos>
+  <requires>
+    <display_length compare="ge">360</display_length>
+  </requires>
+  <supports>
+    <control>keyboard</control>
+    <control>pointing</control>
+    <control>touch</control>
+  </supports>
+</component>

@@ -7,7 +7,7 @@
 | Domain | `re.sonny.Tangram` |
 | Upstream messages (whole catalogue: `lib/`-reachable + data-file-only) | 78 |
 | Ported (Ruby-reachable keys, i.e. every key with at least one site in a `.blp`/`.js` file this port has a `lib/*.rb` counterpart for) | **53 / 53** |
-| Gaps (keys whose only sites are `data/re.sonny.Tangram.gschema.xml`, `data/appdata/re.sonny.Tangram.metainfo.xml` or `data/re.sonny.Tangram.desktop`) | 25 |
+| Gaps (keys whose only sites are `data/re.sonny.Tangram.gschema.xml`, `data/appdata/re.sonny.Tangram.metainfo.xml` or `data/re.sonny.Tangram.desktop`) | 16 (9 of the 10 `.desktop`/`metainfo.xml`-only keys now have a site — see **Resolved this round** below; 15 `.gschema.xml`-only keys plus the one screenshot caption this port ships no screenshot for do not) |
 | Extra (port messages upstream never marks) | 2 (`Delete` response label, the two gesture-row subtitles — see **Extra** below) |
 | Upstream languages | 21 `.po` files, `LINGUAS` matches exactly |
 | Languages shipped by the port | **21 / 21** — `po/*.po` copied from upstream unchanged, compiled to `locale/<lang>/LC_MESSAGES/re.sonny.Tangram.mo` |
@@ -224,12 +224,40 @@ gettext key is the string, not the file it came from, and that key is
 already in the catalogue. Only the gschema-only keys (the ones with no
 Ruby-reachable twin) are listed here as open.
 
-This round does not build a `.gschema.xml`, `metainfo.xml` or `.desktop`
-file — `lib/settings.rb` stores settings as JSON rather than compiled
-GSettings, which is this port's own documented divergence, and no metainfo
-or desktop file exists in `data/` at all. Building any of the three is a
-component-parity gap as much as a translation one; closing it is future
-work, named here rather than silently dropped.
+### Resolved this round: `.desktop` and `metainfo.xml` now exist; `.gschema.xml` still deliberately does not
+
+`data/re.sonny.Tangram.desktop` and `data/appdata/re.sonny.Tangram.metainfo.xml`
+are now real files in this port, carrying forward upstream's current `Name`,
+`Comment`, `Keywords`, `summary`, `description` and use-case list verbatim.
+That closes the "no Ruby site to attach them to" problem for 9 of the 10
+`.desktop`/`metainfo.xml`-only msgids above: `Tangram`, `Browser for your
+pinned tabs`, `Franz;Ferdi;…`, `Tangram is a new kind of browser…`, `Common
+use cases:` and the four use-case bullets — a real site for them now exists
+in this port, where none did before. The tenth, `Tabs overview`, is
+upstream's screenshot `<caption>`; this port's `metainfo.xml` ships no
+`<screenshots>` section at all, because `data/appdata/desktop.png` (the
+screenshot it would caption) was never ported either — so that one msgid
+is still open, for the same reason the asset it describes is not here.
+
+What this does **not** do is make those files' strings reachable through
+`po/*.po` the way `lib/*.rb`'s `_()` calls are. A `.desktop` file is
+translated per-key (`Comment[de]=…`) and a `metainfo.xml`'s `<translation
+type="gettext">` tag is resolved by AppStream tooling (`appstream-util`,
+GNOME Software) reading the same gettext domain's `.mo` files directly —
+neither is something the pure-Ruby `gettext` gem this port uses can produce;
+that needs `msgfmt --desktop-file`/`itstool`, system tools this port's
+Rakefile does not invoke anywhere. So: the files exist, carry the right
+English strings, and are real desktop-integration artifacts a packager could
+install — but they ship English-only until that merge step is added. That is
+stated here explicitly, not left to be discovered as a silent gap.
+
+`data/re.sonny.Tangram.gschema.xml` is **not** added. `lib/settings.rb`
+stores settings as JSON rather than compiled GSettings — this port's own
+documented divergence (`component-parity.md`'s point 5) — and a schema file
+nothing in this port reads would be an inert, unwired component, worse than
+not shipping one at all. The 17 gschema-only msgids above stay open for that
+reason: if this port ever moves `lib/settings.rb` onto real `Gio::Settings`,
+those key summaries/descriptions get a real site then, and not before.
 
 ## Extra — port messages upstream never marks
 
@@ -261,16 +289,48 @@ lines, all in `lib/shortcuts_dialog.rb`, `lib/instance_dialog.rb`,
 them is censused by hand in the tables above, per the skill's own rule for
 when a scanner cannot read a marker. None are left out.
 
+## Fixed this round: `rake gettext:mo:update` was silently compiling empty `.mo` files
+
+The `.mo` files this skill's earlier rounds reported "verified on screen"
+were, as committed, header-only — `locale/de/LC_MESSAGES/re.sonny.Tangram.mo`
+was 369 bytes with zero translated strings in it, confirmed with
+`msgunfmt`/`strings`. `LANGUAGE=de` against the port, run fresh this round,
+proved it: `MainMenu.new._('Keyboard Shortcuts')` returned the English
+string, not `Tastaturkurzbefehle`. The earlier "resolved"/"verified" claims
+in this file and in `.reports/translation-parity.md` were wrong, not stale —
+nobody re-ran the on-screen check after the `.mo`s were last (re)compiled.
+
+Root cause: `GetText::Tools::Task.define`'s generated `gettext:po:update`/
+`gettext:mo:update` tasks hardcode a nested `po/<locale>/<domain>.po` layout
+(`gettext` gem 3.5.1, `lib/gettext/tools/task.rb`'s `Path` class). This
+project's `po/` is flat (`po/de.po`), matching upstream's own layout. Running
+the generated `mo:update` task silently created brand-new,
+translation-less `po/de/re.sonny.Tangram.po` (merged against nothing, since
+nothing existed at that path) and compiled `locale/de/LC_MESSAGES/*.mo` from
+*that*, never touching the real, translated `po/de.po`. No error, no
+warning — the task just did the wrong thing quietly, 21 times.
+
+Fixed by replacing both generated tasks in `Rakefile` with hand-written ones
+that compile straight from the flat `po/<lang>.po` files via GNU `msgfmt`
+(mirroring what `gettext:mo:check` already did correctly). The stray
+`po/<lang>/` directories the broken task had created were deleted, never
+committed.
+
 ## Checks run
 
-- `rake gettext:mo:update` — compiles 21 `.mo` files from `po/*.po`, via the
-  pure-Ruby `rmsgfmt`.
+- `rake gettext:mo:update` (fixed version) — compiles 21 non-empty `.mo`
+  files from `po/*.po` via GNU `msgfmt`; `locale/de/LC_MESSAGES/re.sonny.Tangram.mo`
+  went from 369 bytes (header only) to 7581 bytes.
 - `rake gettext:mo:check` — GNU `msgfmt -c --check-format` over all 21
   `.po` files: **0 warnings, 0 errors**.
-- `LANGUAGE=de ruby …` against `MainMenu#_('Keyboard Shortcuts')`,
-  `MainMenu#_('About Tangram')` and `ShortcutsDialog#item('Quit', '')` — all
-  three resolve to the German `.po`'s translation (`Tastaturkurzbefehle`,
-  `Über Tangram`, `Beenden`).
+- `rake gettext:po:update` (fixed version) — regenerates the flat
+  `po/re.sonny.Tangram.pot` in place (diff reduces to the timestamp header);
+  confirmed it creates no `po/<lang>/` directories.
+- `LANGUAGE=de ruby …` against `Translations#_('Keyboard Shortcuts')` and
+  `Translations#_('Browser for your pinned tabs')` — re-run after the fix,
+  both now actually resolve to the German `.po`'s translation
+  (`Tastaturkurzbefehle`, `Browser für angepinnte Tabs`), where before the
+  fix both returned English.
 - `test/run_all.rb` (the project's own gate): **174 of 174 checks passed**,
   unchanged by this round's edits.
 - Not run: a full on-screen pass of the running app under `LANGUAGE=ar`/`he`

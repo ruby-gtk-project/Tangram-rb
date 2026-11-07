@@ -1,0 +1,13 @@
+[Desktop Entry]
+# TRANSLATORS: Do NOT translate
+Name=Tangram
+Comment=Browser for your pinned tabs
+Exec=tangram
+Terminal=false
+Type=Application
+Categories=Network;WebBrowser;GNOME;GTK;
+X-GNOME-UsesNotifications=true
+Icon=re.sonny.Tangram
+# TRANSLATORS: Do NOT translate
+Keywords=Franz;Ferdi;Rambox;Wavebox;Station;
+StartupNotify=true

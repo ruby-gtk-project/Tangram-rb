@@ -94,3 +94,36 @@ own rules require.
 this port today, for a plain, named reason (no `data/` packaging files
 exist here at all) rather than an excuse. This is the one open item this
 document carries forward unchanged.
+
+## Resolved this round (2026-11-07, round 2)
+
+Two findings, one fix each — both detailed in full in `TRANSLATION_PARITY.md`:
+
+- **The "verified on screen" claim two rounds ago was false, not stale.**
+  Every committed `locale/<lang>/LC_MESSAGES/*.mo` was header-only — 369
+  bytes for `de`, zero translated strings, confirmed with `strings`/
+  `msgunfmt`. Re-running the exact on-screen check this document and
+  `component-parity.md` had both cited as passing (`LANGUAGE=de` against
+  `Translations#_('Keyboard Shortcuts')`) returned the English string, not
+  `Tastaturkurzbefehle`. Root cause: `Rakefile`'s `GetText::Tools::Task`
+  generated `gettext:mo:update` task hardcodes a nested `po/<locale>/<domain>.po`
+  layout that does not match this project's flat `po/<lang>.po`, so it
+  silently compiled `.mo`s from brand-new, empty-translation files instead of
+  the real ones. Fixed by replacing the generated `po:update`/`mo:update`
+  tasks with hand-written ones that compile straight from `po/<lang>.po` via
+  GNU `msgfmt`; re-run of the same on-screen check now resolves correctly
+  (`locale/de/LC_MESSAGES/re.sonny.Tangram.mo` is 7581 bytes, not 369).
+- **9 of the 25 data-file-only msgids now have a site.**
+  `data/re.sonny.Tangram.desktop` and `data/appdata/re.sonny.Tangram.metainfo.xml`
+  are now real files in this port (they were not findable at all last
+  round — `find data -type f` found only `style.css` and the icon SVGs,
+  confirmed again before adding these). They carry upstream's current
+  `Name`/`Comment`/`Keywords`/`summary`/`description`/use-cases verbatim.
+  Explicitly documented as English-only for now: translating a `.desktop` or
+  an AppStream `metainfo.xml` needs `msgfmt --desktop-file`/`itstool`, which
+  this port's pure-Ruby `gettext`-gem toolchain does not invoke. 16 msgids
+  remain open: the 15 whose only site is `data/re.sonny.Tangram.gschema.xml`
+  (not added — `lib/settings.rb` stores settings as JSON, so a schema file
+  nothing reads would be an inert, unwired component, not a fix), plus one
+  screenshot caption for a screenshot (`data/appdata/desktop.png`) this port
+  does not ship either.

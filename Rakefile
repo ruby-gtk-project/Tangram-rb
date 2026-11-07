@@ -165,16 +165,41 @@ end
 # unchanged under its own domain; see TRANSLATION_PARITY.md. These tasks are
 # pure Ruby (the `gettext` gem), so they need nothing from the system beyond
 # GNU `msgfmt` for the `-c --check-format` pass `gettext:mo:check` runs.
+#
+# These are hand-written rather than `GetText::Tools::Task.define`'s own
+# generated tasks. That helper's internal `Path` class hardcodes a nested
+# `po/<locale>/<domain>.po` layout (see the gettext gem's own
+# `lib/gettext/tools/task.rb`), but this project's `po/` is flat —
+# `po/de.po`, matching upstream's own layout and what `TRANSLATION_PARITY.md`
+# describes. Running the generated `gettext:mo:update` silently created
+# brand-new, translation-less `po/<lang>/re.sonny.Tangram.po` files (merged
+# from the `.pot` with nothing to merge against) and compiled every
+# `locale/<lang>/LC_MESSAGES/*.mo` from *those* instead of from the real,
+# translated `po/<lang>.po` — so every shipped language's `.mo` ended up
+# header-only, with no translated string reachable at runtime despite the
+# catalogue itself being complete. Compiling straight from the flat files
+# below is the fix; the stray `po/<lang>/` directories it had created were
+# deleted, not committed.
 begin
-  require "gettext/tools/task"
+  require "gettext/tools/xgettext"
 
-  GetText::Tools::Task.define do |task|
-    task.domain = "re.sonny.Tangram"
-    task.package_name = "re.sonny.Tangram"
-    task.files = Dir.glob("lib/**/*.rb") + Dir.glob("exe/*")
-    task.po_base_directory = "po"
-    task.mo_base_directory = "locale"
-    task.locales = File.read("po/LINGUAS").split
+  desc("Regenerate po/re.sonny.Tangram.pot from the Ruby sources listed in po/POTFILES")
+  task("gettext:po:update") do
+    files = File.read("po/POTFILES").split("\n").reject(&:empty?)
+    GetText::Tools::XGetText.run(
+      *files,
+      "--output=po/re.sonny.Tangram.pot",
+      "--package-name=re.sonny.Tangram",
+    )
+  end
+
+  desc("Compile locale/<lang>/LC_MESSAGES/re.sonny.Tangram.mo from each po/<lang>.po")
+  task("gettext:mo:update") do
+    File.read("po/LINGUAS").split.each do |lang|
+      mo_dir = File.join("locale", lang, "LC_MESSAGES")
+      mkdir_p(mo_dir)
+      sh("msgfmt", "-o", File.join(mo_dir, "re.sonny.Tangram.mo"), "po/#{lang}.po")
+    end
   end
 
   desc("Verify every po/*.po file compiles clean under GNU msgfmt's format checker")

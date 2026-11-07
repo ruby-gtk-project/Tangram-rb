@@ -150,3 +150,27 @@ No new behaviour/style/count gap found beyond what this document already
 carries. Still not clean: the `initialize-notification-permissions`
 auto-grant remains unported, and the text axis still fails per
 `translation-parity.md`.
+
+## Root-caused this round (2026-11-07, round 2)
+
+The `initialize-notification-permissions` segfault is no longer just
+reproduced, it is root-caused. Reading `gobject-introspection` 4.3.9's own C
+source (`rb_gi_arguments_in_init_arg_ruby_list` in
+`ext/gobject-introspection/rb-gi-arguments-in.c`) shows it always marshals a
+`GList<interface>` Ruby-side argument with `RVAL2GOBJGLIST` and then checks
+`G_TYPE_CHECK_INSTANCE_TYPE` on each element — both of which assume a
+`GObject` header on every element. `WebKitSecurityOrigin` is a `GBoxed`, not
+a `GObject`, so that is a real bug in the gem's general `GList`-of-boxed
+marshalling, not anything specific to WebKit or to this method. Documented
+in full, with the exact function and file, in `lib/web_view.rb`'s class
+comment. An FFI bypass (calling `webkit_web_context_initialize_notification_permissions`
+directly, past GI's broken marshaller for just this one call) was considered
+and rejected: it would need a raw C pointer for the already-GI-wrapped
+`WebContext`/`SecurityOrigin` Ruby objects, and neither `glib2` nor
+`gobject-introspection` exposes one — there is no supported way to get a
+pointer back out of an object they already wrap. A standalone reproduction
+script, `test/webkit_notification_permissions_segfault_repro.rb`, now lives
+in the repo for citing when this is filed against ruby-gnome, deliberately
+excluded from `test/run_all.rb` because its entire point is to crash the
+process. This remains the one open behaviour gap on this axis — now
+precisely located rather than merely observed.
