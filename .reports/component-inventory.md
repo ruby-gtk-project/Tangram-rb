@@ -7,6 +7,35 @@ written in this step; this revises the previous survey (`fb78239`) against
 and the tab repeater"), which finished every component the prior survey
 listed as missing or partial.
 
+## Correction (this round, re-read at HEAD `87ed0b8`)
+
+Re-read against `HEAD` (`87ed0b8`, "Fix broken gettext:mo:update; root-cause
+the WebKit segfault; port desktop/metainfo.xml"), five commits past the
+`5b4dd64` state this file last described. The component list (13 units, all
+present) is unchanged — nothing in those five commits added or removed a
+widget — but two data-file rows below were stale:
+
+1. **`data/re.sonny.Tangram.desktop` and `data/appdata/re.sonny.Tangram.metainfo.xml`
+   now exist.** Both were absent (confirmed by `find data -type f`, which
+   found only `style.css` and the icon SVGs) as of every earlier version of
+   this report. They now carry upstream's `Name`/`Comment`/`Keywords` and
+   `summary`/`description`/use-cases verbatim, English-only (translating
+   them needs `msgfmt --desktop-file`/`itstool`, which this port's pure-Ruby
+   `gettext` toolchain does not invoke — see `TRANSLATION_PARITY.md`).
+   `data/re.sonny.Tangram.gschema.xml` still has no port — deliberately, see
+   Divergence 2 below — so it still has no msgid site.
+2. **The translation gap shrank from 25 to 16 msgids.** The 9 msgids whose
+   only upstream site was the `.desktop`/`metainfo.xml` files now have
+   somewhere to live. The remaining 16 are the 15 whose only site is
+   `re.sonny.Tangram.gschema.xml` plus one screenshot caption for a
+   screenshot this port does not ship. See `.reports/translation-parity.md`
+   and `TRANSLATION_PARITY.md` for the full ledger.
+
+No GResource manifest exists upstream to inventory separately: `src/meson.build`
+builds `re.sonny.Tangram.src.gresource` from a `gjspack` custom target (bundling
+every GJS source module), not from a static `.gresource.xml` — already covered
+by Divergence 4 below (`tangram-resource` serving `data/` instead).
+
 ## Correction (this round)
 
 Two things below were wrong, both flagged already in
@@ -59,7 +88,7 @@ Two things below were wrong, both flagged already in
 | Keyboard shortcuts bound | 11 (8 via `Gtk.ShortcutController`, 3 via `set_accels_for_action`) | **11 — all present** (`lib/shortcuts.rb`) |
 | Shortcuts-window rows listed | 22 | 22 (`lib/shortcuts_dialog.rb`, as `Adw.ShortcutsDialog`) |
 | GSettings schemas | 2 (`re.sonny.Tangram`, `re.sonny.Tangram.Instance`) | both keysets reproduced in `lib/settings.rb`, JSON-backed, no `.gschema.xml` (deliberate divergence) |
-| `po/` catalogue | 21 languages, `re.sonny.Tangram.pot` | **stale row — see Correction above.** `po/` now ships upstream's 21 languages unchanged; 53 of 78 msgids (every one with a Ruby-reachable site) are marked and translate on screen — `TRANSLATION_PARITY.md` has the full ledger |
+| `po/` catalogue | 21 languages, `re.sonny.Tangram.pot` | **stale row — see Correction above.** `po/` now ships upstream's 21 languages unchanged; 62 of 78 msgids (53 Ruby-reachable + 9 now covered by the ported `.desktop`/`metainfo.xml`) are marked and translate on screen (`.mo`s verified non-empty after the `gettext:mo:update` fix); 16 remain open, all `.gschema.xml`-only or the unshipped screenshot caption — `TRANSLATION_PARITY.md` has the full ledger |
 | Specs | `src/utils.test.js` | `spec/url_spec.rb` ports it; no spec for the newly-landed window/view/tab/web-view files yet |
 
 ---
@@ -97,7 +126,10 @@ Non-widget support files the components above need:
 | `src/webapp/webapp.js`, `src/webapp/ephy.js` | `lib/web_app_info.rb` | support | **yes** — the manifest/title/icon/URL probe `on_add_tab` awaits |
 | `troll/src/util.js` (`persistWindowState`, version helpers), `troll/src/async.js` | folded into `lib/settings.rb` / `lib/about_dialog.rb` | support | **yes, inferred** — `persist_window_state` and the version readers exist; the `troll` submodule is still not checked out, so neither was read against its real source |
 | `src/style.css` | `data/style.css`, loaded by `lib/tangram/application.rb` | stylesheet | **yes** — the `.tab-close-button` rule (hides the tab-overview thumbnail close buttons), loaded by a `Gtk::CssProvider` added to the display on `activate` |
-| `po/*` (21 languages) | translation setup | i18n | **stale row — see Correction above.** `po/` and `lib/translations.rb` exist now; 53/78 msgids ported, 25 wait on `.gschema.xml`/`metainfo.xml`/`.desktop`, none of which exist in `data/` |
+| `data/re.sonny.Tangram.desktop` | `data/re.sonny.Tangram.desktop` | desktop entry | **yes (this round)** — `Name`/`Comment`/`Keywords`/`Exec`/`Icon`/`Categories` copied verbatim, English-only |
+| `data/appdata/re.sonny.Tangram.metainfo.xml` | `data/appdata/re.sonny.Tangram.metainfo.xml` | AppStream metadata | **yes (this round)** — `summary`/`description`/use-case list copied verbatim, English-only; no `<releases>` or screenshot entry re-ported |
+| `data/re.sonny.Tangram.gschema.xml` | none — see Divergence 2 | schema file | **deliberately not ported** — `lib/settings.rb` is a JSON store instead; the 15 msgids whose only upstream site is this file have nowhere to live as a result |
+| `po/*` (21 languages) | translation setup | i18n | **stale row — see Correction above.** `po/` and `lib/translations.rb` exist now; 62/78 msgids ported (53 Ruby-reachable + 9 via the desktop/metainfo files above), 16 remain open (15 `.gschema.xml`-only + 1 unshipped screenshot caption) |
 | `src/utils.test.js` | `spec/url_spec.rb` | spec | **yes** — ports every `assert.is` line plus `normalize`/`allowed_for_navigation?`, which upstream never tested |
 | `src/webapp/test.js` | `spec/web_app_info_spec.rb` | spec | **yes (this round)** — all 9 scenarios, run the way upstream ran them: a real `WebKit::WebView` loading real HTTP responses from a local server, fed to `WebAppInfo.fetch`. Previously only 1 of 9 was covered, indirectly, via one `test/drive_new_tab.rb` step; see `test-parity.md` |
 
@@ -125,45 +157,54 @@ Non-widget support files the components above need:
    is registered against the one real resource source this port has:
    `data/` (the icons and `style.css` `lib/tangram/application.rb` already
    reads off disk). See `lib/web_view.rb`'s class comment.
-5. **`initialize-notification-permissions` has no port — confirmed, not
-   assumed.** Calling `WebKit::WebContext#initialize_notification_permissions`
-   with a non-empty list of `WebKit::SecurityOrigin` was tested directly
-   against this port's own GI loader and segfaults every time (an empty list
-   does not); there is no workaround available in the Ruby bindings as they
-   stand. `permission-request` allows every notification request outright
-   instead, which reaches the same end state for the one origin upstream
-   pre-grants, but the mechanism itself — and the one difference it would
-   make for an origin upstream never pre-granted — is simply absent, not
-   approximated.
+5. **`initialize-notification-permissions` has no port — root-caused this
+   round, not just confirmed.** Calling
+   `WebKit::WebContext#initialize_notification_permissions` with a non-empty
+   list of `WebKit::SecurityOrigin` segfaults every time (an empty list does
+   not); `test/webkit_notification_permissions_segfault_repro.rb` isolates it
+   down to `gobject-introspection`'s own argument marshalling of that
+   `GList`, not anything app-specific, and is kept out of `test/run_all.rb`
+   deliberately since the point of running it is that the process crashes.
+   `permission-request` allows every notification request outright instead,
+   which reaches the same end state for the one origin upstream pre-grants,
+   but the mechanism itself — and the one difference it would make for an
+   origin upstream never pre-granted — is simply absent, not approximated.
 
-## Correction (this round)
+## Correction (prior round, superseded by the Correction at the top of this file)
 
-**Item 1 below is stale.** `po/` now exists: upstream's 21 `.po` files and
-`LINGUAS` are copied in unchanged, `lib/translations.rb` binds every marked
-string to the `re.sonny.Tangram` domain, and 53 of the 78 upstream msgids
-that have a Ruby-reachable site are marked and proven to translate on screen
-(`LANGUAGE=de` → `Tastaturkurzbefehle`, `Beenden`). The 25 gschema/metainfo/
-desktop-only keys remain open, because the port still has no `.gschema.xml`,
-`metainfo.xml` or `.desktop` file for them to live in — see
-`TRANSLATION_PARITY.md` for the full per-message ledger. The line below is
-left as the earlier pass wrote it, flagged rather than silently edited.
+**Item 1 in Open items below was stale as of `5b4dd64`.** `po/` existed:
+upstream's 21 `.po` files and `LINGUAS` copied in unchanged,
+`lib/translations.rb` binding every marked string to the `re.sonny.Tangram`
+domain, 53 of 78 upstream msgids with a Ruby-reachable site marked and
+proven to translate on screen (`LANGUAGE=de` → `Tastaturkurzbefehle`,
+`Beenden`). The 25 gschema/metainfo/desktop-only keys were open at that
+point because the port had no `.gschema.xml`, `metainfo.xml` or `.desktop`
+file for them to live in. **That 25 is now 16** — see the Correction at the
+top of this file for what changed.
 
 ## Open items (not blockers — nothing here stops the app running)
 
-1. **No `po/` / gettext.** 21 upstream catalogues, zero on `ruby`. Every
-   string a widget shows is a Ruby literal. This is `translation-parity`'s
-   job, not this survey's. — **Stale; see Correction above.**
+1. **`.gschema.xml` has no port.** 15 msgids have no Ruby-reachable site
+   because of it — deliberate (Divergence 2), not an oversight, but still
+   the single largest remaining translation gap. This is
+   `translation-parity`'s job, not this survey's.
 2. **`troll` submodule still not checked out.** `persist_window_state` and
    the version-reading helpers in `lib/settings.rb`/`lib/about_dialog.rb` are
    written from the call sites in `window.js`/`AboutDialog.js`, not checked
    against `troll/src/util.js` itself.
 3. **`initialize-notification-permissions` has no port** — see Divergence 5
    above; listed here too because it is owed work this port cannot pay
-   under the current Ruby bindings, not a settled decision.
+   under the current Ruby bindings (a `gobject-introspection` marshalling
+   bug), not a settled decision.
 4. **Gem-path holdout.** `lib/tangram/application.rb` is the only namespaced,
    nested file left; moving it to flat `lib/application.rb` with a top-level
    `Application` class would match every other ported file and the pilot's
    house shape exactly.
+5. **`metainfo.xml`'s `<releases>` history and screenshot entry not re-ported.**
+   The ported `metainfo.xml` carries `summary`/`description`/use-cases but
+   not upstream's version-history `<releases>` block or its one
+   `<screenshot>` (which points at `data/appdata/desktop.png`, a file this
+   port does not ship). Neither blocks the app; both are real, named gaps.
 
 ## History
 
@@ -173,6 +214,19 @@ left as the earlier pass wrote it, flagged rather than silently edited.
   settled there; see that commit's report body in `git log -p` if needed).
 - `e4a44d9` ("Port the window, its two views, the web view and the tab
   repeater") — landed components 2–5 and 13, closing every gap the first
-  survey listed. This revision reflects that state: all 13 component units
-  present, with the divergences and open items above being everything real
-  that is left.
+  survey listed. The `efcbd58` revision reflected that state: all 13
+  component units present.
+- `fa04c93` ("Port the tangram-resource scheme, cover WebAppInfo, fold rspec
+  into the gate") and `5b4dd64` ("Port the translation catalogue: po/,
+  gettext wiring, 53/78 msgids marked") — `tangram-resource` registered for
+  real (Divergence 4), `spec/web_app_info_spec.rb` added, `po/` + `lib/translations.rb`
+  landed. No new component units; all 13 remained the full count.
+- `87ed0b8` ("Fix broken gettext:mo:update; root-cause the WebKit segfault;
+  port desktop/metainfo.xml") — this revision's basis. Fixed a silent
+  mistranslation bug in the generated gettext Rake tasks, root-caused the
+  `initialize-notification-permissions` segfault to a `gobject-introspection`
+  marshalling bug (Divergence 5), and ported `data/re.sonny.Tangram.desktop`
+  and `data/appdata/re.sonny.Tangram.metainfo.xml`, closing 9 of the 25
+  translation-only gaps. Still 13 of 13 component units present; no widget
+  work landed in these three commits, which is why this file's component
+  list carries forward unchanged from `efcbd58`.
