@@ -15,7 +15,7 @@
 # hand, and nothing in the 128 said it had been left out. This script runs
 # all four itself and folds every one of them into the one number it prints.
 
-require 'open3'
+require 'tempfile'
 
 root = File.expand_path('..', __dir__)
 
@@ -42,7 +42,24 @@ all_ok = true
 
 puts '# Every check'
 CHECKS.each do |name, command|
-  stdout, _stderr, status = Open3.capture3(*command, chdir: root)
+  # Not `Open3.capture3`: it wires the child's stdout/stderr to pipes, and a
+  # WebKitGTK-backed child (the RSpec suite's `web_app_info_spec.rb`) aborts
+  # partway through every time it is spawned with its stdio on pipes rather
+  # than real files — reproduced directly, independent of this script, by
+  # running the same `ruby -e` command under `Process.spawn(..., out: pipe)`
+  # versus `out: a_tempfile.path`. Real files avoid whatever about a pipe
+  # trips WebKit's own child-process spawning, so the output is captured to
+  # temp files and read back instead.
+  stdout = nil
+  status = nil
+  Tempfile.create('run_all-out') do |out_file|
+    Tempfile.create('run_all-err') do |err_file|
+      pid = Process.spawn(*command, chdir: root, out: out_file.path, err: err_file.path)
+      Process.wait(pid)
+      status = $?
+      stdout = File.read(out_file.path)
+    end
+  end
 
   # `check_models.rb` prints "N checks, M failed"; the two `drive_*.rb`
   # scripts print "X of Y checks passed"; RSpec's progress formatter prints
