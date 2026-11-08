@@ -174,3 +174,34 @@ in the repo for citing when this is filed against ruby-gnome, deliberately
 excluded from `test/run_all.rb` because its entire point is to crash the
 process. This remains the one open behaviour gap on this axis — now
 precisely located rather than merely observed.
+
+## Verified this round (2026-11-08, independent re-audit)
+
+Reproduced again against `HEAD` `5ed9beb`:
+
+- `grep -n "initialize_notification_permissions" lib/web_view.rb` — still
+  only in the class comment, never called. The gap stands, unchanged.
+- `grep -n "register_uri_scheme" lib/web_view.rb` — still registered for
+  real at lines 215-216 (line numbers shifted since the last check, file
+  grew). Still clean.
+- New since the last round's "Verified": `test/drive_new_tab.rb` grew a
+  step (`5ed9beb`, "Drive the eight web-view keyboard shortcuts") that
+  checks `Shortcuts#build`'s `Gtk::ShortcutController` is attached to the
+  window and all eight web-view accelerators are registered, then invokes
+  each bound callback directly (a real key press cannot be synthesised in
+  this offscreen session) to confirm `focus`/`stop-loading`/`reload` run
+  without raising. This closes the one count-axis item that was previously
+  unverified at the component level — the eight-shortcut count itself was
+  already recorded as present in `component-inventory.md`'s totals, but
+  nothing had driven the controller before. It does not touch any of the
+  three gaps/correspondences this document already tracks (it is coverage
+  of an already-"present" count, not a new gap or a new fix), so the totals
+  table below is unchanged.
+
+No new count/style/behaviour gap found. Still not clean:
+`initialize-notification-permissions` remains unported, and the text axis
+still fails per `translation-parity.md` (15 of 78 msgids with nowhere to
+live). `data/re.sonny.Tangram.service` (D-Bus activation) is also still
+missing — see `component-identification.md`'s "Verified this round"
+section; not scored on this document's four axes since it is not in-app GUI
+surface, but named here too so it is not lost between documents.

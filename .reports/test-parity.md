@@ -227,3 +227,63 @@ that fails loudly on a truncated read rather than silently producing
 `(0/0)`. None of that is done here — this is a finding, not a patch, and
 is recorded as owed work rather than fixed under this audit's own
 authority.
+
+## Found this round (2026-11-08): the retry fix changed the failure mode, it did not remove it — and the new mode is worse
+
+`4ace5aa` ("Make the gate's RSpec capture deterministic...") added the
+retry loop described in the previous round's finding, and `5ed9beb`
+("Drive the eight web-view keyboard shortcuts...") grew `drive_new_tab.rb`
+from 38 to 44 checks, landing the task's stated gate for this round:
+`180 checks passed, 0 failed, covering 13 components`.
+
+Three independent runs of the exact committed gate command
+(`nix develop --command xvfb-run -a ruby test/run_all.rb`) this round, on
+this exact tree, no commit in between:
+
+```
+run 1: ok drive_new_tab.rb (44/44) → 180 of 180 → GATE OK   (matches the task's stated gate)
+run 2: ok drive_new_tab.rb (48/48) → 184 of 184 → GATE OK   (impossible — see below)
+run 3: ok drive_new_tab.rb (44/44) → 180 of 180 → GATE OK   (matches again)
+```
+
+Run 2's `(48/48)` is not a real result. `test/drive_new_tab.rb` has exactly
+44 `d.check(...)` call sites — confirmed three ways: `grep -c 'd\.check('
+test/drive_new_tab.rb` → 44, a Ruby `scan(/d\.check\(/)` → 44, and reading
+the file top to bottom (reproduced in full in this document's earlier
+section) — and it contains no loop, no conditional branch and no
+retry/recursion around any check: every step runs exactly once, in a fixed
+sequence, driven one per `GLib::Timeout` tick. There is no code path in the
+committed script that can execute more than 44 checks in one run. Running
+`ruby test/drive_new_tab.rb` standalone (outside `run_all.rb`'s capture)
+immediately after seeing `(48/48)` printed `44 of 44 checks passed,
+DRIVE OK` — deterministic, as the static count predicts.
+
+So `run_all.rb` printed a passing number for a subprocess check that no
+execution of the underlying script could have produced. This is not the
+previously-found failure mode (a truncated capture read as `(0/0)` and
+correctly flagged `FAIL`) — this is a **wrong but plausible-looking passing
+number**, which `GATE OK` did not flag at all. The retry loop's own
+truncation guard (`break if passed && total&.positive?`) only checks that a
+summary line was *found*, not that the numbers in it are *sane* for the
+command that was run; a `(48/48)`-shaped string passed that guard on the
+first attempt with no retry warning printed, because `48 == 48` looks like
+a clean pass. Not root-caused in this round — plausible causes include a
+`Tempfile.create`-returned path being reused across two overlapping
+subprocess lifetimes under the heavy concurrent host load this round ran
+under (dozens of unrelated `ruby`/`xvfb-run` processes were competing for
+CPU at the time; see `accountability-ensurance.md`), but this was not
+isolated with certainty and is recorded as owed investigation, not a fix.
+
+**This is a parity gap in its own right, by the task's own rule** ("treat a
+failed or narrow drive run as a parity gap in its own right"): a gate that
+can print a self-consistent-looking but fabricated passing count, with no
+signal distinguishing it from a real one, means every "N checks passed"
+figure this port's reports and commit messages cite — including this
+round's own `180` — is a number that happened to be believed, not a number
+that was proven immune to this failure mode. Two of three runs this round
+matched the expected, statically-verifiable count; one did not and gave no
+indication it shouldn't be trusted. The gate is GREEN more often than RED,
+but "green" and "the printed number is true" are no longer the same claim
+for this harness, which is worse than the previous round's flakiness (a
+false `FAIL` is safe to distrust; a false `OK` with a wrong-but-plausible
+number is not self-announcing).

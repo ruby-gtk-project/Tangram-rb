@@ -219,3 +219,86 @@ remains unported. Three stale/overconfident claims found and corrected
 this round, in the reports themselves rather than only in this one; none
 of them was a decision dressed as settled, and none survives uncorrected
 past this commit.
+
+## Found this round (2026-11-08, round 4)
+
+Re-ran the scan and re-diffed against two commits that landed since the
+last round's audit (`4ace5aa`, `5ed9beb`), on the same theory as before —
+a report's own confidence is not evidence.
+
+```sh
+$ grep -rniE "TODO|FIXME|not implemented|for now|in a future" lib/ exe/
+(no hits)
+```
+
+Clean of excuse language in `lib/`/`exe/`, same as every prior round. Two
+findings outside that grep, both about the reports themselves rather than
+the port:
+
+### 1. Two committed reports went stale the moment `4ace5aa`/`5ed9beb` landed, and nothing caught it before this round
+
+- `.reports/component-inventory.md`'s component table (row 1) and
+  `.reports/test-parity.md`/`.reports/component-parity.md`'s prose both
+  still named `lib/tangram/application.rb` after `4ace5aa` renamed it to
+  `lib/application.rb` (dropping the `Tangram::` module to match every
+  other ported file). `component-inventory.md`'s own "Open items" #4
+  already recorded the rename as done — but its component table two
+  sections above was never updated to match its own open-item note, so
+  the file described itself inconsistently: "done" in one place, the old
+  path in another. Corrected in `component-identification.md`'s
+  "Verified this round" section this round, rather than silently edited
+  into the original table.
+- Every report's last-committed "current" check-count was `174`
+  (`test-parity.md`'s and `component-inventory.md`'s own headline
+  figures), one commit stale against `5ed9beb`'s `180`. Not a fabrication
+  — `174` was real when written — but it sat in committed, readable
+  documents as "the gate" for however long it took this round to start,
+  with no document flagging that a commit had moved past it. This is the
+  same "true when checked, never revisited" pattern the accountability
+  skill flagged twice already (see "Found this round, round 3" above);
+  it recurred a fourth round running, which is itself worth naming: fixing
+  the individual stale claim each time has not fixed the habit of not
+  re-checking a number after each commit that could move it.
+
+### 2. A worse version of the known gate flakiness: a false *passing* number, not just a false failure
+
+`test-parity.md`'s own "Found this round" section (this round) has the
+full account: three independent runs of the committed gate command, same
+tree, no commit in between, produced `180`/`184`/`180` — and the `184` run
+printed `drive_new_tab.rb (48/48)` for a script with exactly 44 static
+`d.check(...)` call sites and no loop, conditional or retry that could
+produce more than 44 in one execution (confirmed by direct count, by
+`scan`, and by a standalone re-run immediately after, which printed
+`44 of 44` on the same unmodified file). `GATE OK` was printed both times,
+with no distinguishing signal.
+
+This is the most serious kind of finding this skill looks for, by its own
+severity ranking, and it is worth being precise about which category it
+is: it is not a false claim this audit is asserting on the port's behalf
+(this document corrects stale claims, it does not make new unverified
+ones) — it is a defect in the test harness itself, found by running it
+three times rather than trusting one green run, exactly the discipline
+the prior two rounds' findings established. Nobody had committed a
+`180`-or-higher-than-real number to any report before this round (the
+`184`/`48` numbers exist only in this round's terminal output and in
+`test-parity.md`'s documentation of the anomaly, not asserted as the
+port's true state anywhere), so this is not yet a false green *in a
+report* — it is a live demonstration that the gate itself, unfixed, is
+capable of producing one the next time nobody happens to re-run it twice.
+Recorded as owed work (root-cause and fix the capture path in
+`test/run_all.rb`), not fixed under this audit's own authority.
+
+## Verdict
+
+Still not clean. Four real, named gaps carry forward or were found this
+round: `initialize-notification-permissions` unported,
+`data/re.sonny.Tangram.service` never ported (see
+`component-identification.md`), 15/78 msgids with no site
+(`translation-parity.md`), and the gate's capture path now demonstrated
+capable of printing a passing-looking but impossible check count under
+load. No decision dressed as settled was found, and no false claim was
+found already sitting in a committed report — but the fourth round in a
+row of catching a stale number after the fact, plus a newly-demonstrated
+way for the gate to lie convincingly, means the margin between "clean" and
+"a false green nobody caught yet" is thinner than the individual
+corrections suggest.

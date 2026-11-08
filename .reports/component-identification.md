@@ -92,3 +92,33 @@ example (`gnome-contacts-rb`) treats a missing `data/` directory the same
 way: a translation-catalogue gap, not a missing window. Recorded here only
 so the omission is visible from the component side too, not just inherited
 through `translation-parity.md`'s msgid ledger.
+
+## Verified this round (2026-11-08, independent re-audit)
+
+Re-checked against the current tree (`HEAD` `5ed9beb`), not just re-read:
+
+- `git ls-tree -r --name-only origin/main | grep ^data/` still lists all
+  three of `data/re.sonny.Tangram.desktop`,
+  `data/appdata/re.sonny.Tangram.metainfo.xml` and
+  `data/re.sonny.Tangram.service`. Two of the three now exist in the port
+  (`find data -type f`), landed by `87ed0b8` and `b73806d` after the note
+  above was written. **`data/re.sonny.Tangram.service` is still absent** —
+  `find . -iname '*.service'` under the port finds nothing. This is the one
+  part of the above note that is still fully true; the other two thirds of
+  it are stale (fixed by later commits, already corrected in
+  `component-inventory.md`'s own "Correction" sections). Same disposition as
+  before: not scored as a 14th unit (D-Bus activation is not in-app GUI
+  surface), but named here so it is not silently dropped once the
+  `.desktop`/`metainfo.xml` two-thirds got fixed and this one did not.
+- Unit list re-walked again: still 13 units, all 13 present as a `lib/*.rb`
+  file. One correction this document itself was carrying stale: unit 1's
+  target is listed above as `lib/tangram/application.rb` — `4ace5aa`
+  ("Make the gate's RSpec capture deterministic; flatten the
+  application.rb gem-path holdout") moved it to `lib/application.rb`
+  (top-level `Application`, no `Tangram` module) two commits before this
+  round. The file exists at the new path (`lib/application.rb`, confirmed
+  by `find lib -type f`); the unit-list line above naming the old path is
+  left as the historical record (per this report's own prior practice of
+  not silently editing earlier findings) and corrected here instead: **unit
+  1 is now `src/application.js`,`src/main.js` → `lib/application.rb`.**
+- No new upstream file or in-app surface found that lib/ does not map to.

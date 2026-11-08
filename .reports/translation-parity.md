@@ -168,3 +168,25 @@ homeless (`.gschema.xml`-only). Of the 54, only the 53 are actually marked
 with `_()`/`N_()`/`p_()` and shipped in 21 languages — the caption, like the
 other 9 data-file strings, is English-only text, not a translated one. The
 verdict is unchanged: **not clean.**
+
+## Verified this round (2026-11-08, independent re-audit)
+
+No commit since `b73806d` touched `po/`, `locale/`, `lib/translations.rb`
+or any `data/` packaging file (`git log --oneline b73806d..HEAD -- po/
+locale/ lib/translations.rb data/` is empty — the two commits this round
+added only test coverage and a file rename). Re-ran the checks anyway
+rather than assume that means nothing moved:
+
+- `find data -type f` — still only `re.sonny.Tangram.desktop`, `style.css`,
+  `appdata/re.sonny.Tangram.metainfo.xml` and the two icon SVGs. Still no
+  `.gschema.xml`.
+- `grep -c '^msgid' po/re.sonny.Tangram.pot` → 23 (22 real + header, this
+  `.pot`'s own count, consistent with what this document's totals already
+  describe at the Ruby-reachable layer plus the two packaging files).
+- `find po -name '*.po' | wc -l` → 21, `find locale -name '*.mo' | wc -l`
+  → 21, matching the committed, non-empty `.mo` state this document's
+  earlier "Fixed this round" section established.
+
+No change. **Still 15 of 78 msgids with no site in this port** — all 15
+`.gschema.xml`-only, for the same named reason as before (`lib/settings.rb`
+is a JSON store with no schema file for them to live in). Not clean.
