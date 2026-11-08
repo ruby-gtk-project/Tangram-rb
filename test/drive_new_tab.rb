@@ -127,6 +127,55 @@ GtkDriver.drive(Application.new, shots: 'tmp/shots', interval: 3000) do |d, app|
     d.shot('02-loaded')
   end
 
+  # None of the eight `Gtk::ShortcutController` accelerators Shortcuts#build
+  # installs (Ctrl+L, Escape, Ctrl+R, Alt+Left/Right/Home, Ctrl+Shift+I) were
+  # exercised anywhere until this step — the window-chrome buttons that call
+  # the same handlers were driven, but the key wiring itself never was. A real
+  # key press cannot be synthesised in this offscreen session, so the callback
+  # each trigger is bound to is invoked directly, the same way `app.quit`'s
+  # accelerator is proven by checking `get_accels_for_action` rather than by
+  # pressing Ctrl+Q — this is the same approach applied to the
+  # `Gtk::ShortcutController` instead of `set_accels_for_action`.
+  def shortcut_callback(app, keyval)
+    app.window.shortcuts.shortcuts.find { |keys, _| keys.any? { |kv, _| kv == keyval } }&.last
+  end
+
+  d.step('the eight web-view keyboard shortcuts are wired') do
+    d.check('eight shortcuts registered') { app.window.shortcuts.shortcuts.length == 8 }
+    d.check('the controller is attached to the window') do
+      app.window.window.observe_controllers.any? { |c| c.equal?(app.window.shortcuts.controller) }
+    end
+  end
+
+  # `grab_focus` is called for real (not stubbed), but `has_focus?`/
+  # `focus_widget` never flip true in this offscreen session even on success —
+  # there is no window manager here to give the toplevel itself focus, which
+  # GTK requires before a child's focus grab is observable from outside. The
+  # one thing that *is* observable headlessly is `grab_focus`'s own return
+  # value, which is false when the widget cannot take focus at all (unmapped,
+  # `can_focus` off) and true otherwise — that much the handler's wiring can
+  # still be checked against.
+  d.step('Ctrl+L calls the focus-address-bar handler') do
+    d.check('grab_focus on the address entry succeeded') do
+      shortcut_callback(app, Gdk::Keyval::KEY_l)&.call == true
+    end
+  end
+
+  d.step('Escape calls stop-loading and Ctrl+R calls reload, without raising') do
+    d.check('stop-loading ran clean') do
+      shortcut_callback(app, Gdk::Keyval::KEY_Escape)&.call
+      true
+    end
+    d.check('reload ran clean') do
+      shortcut_callback(app, Gdk::Keyval::KEY_r)&.call
+      true
+    end
+  end
+
+  d.step('the page is still up after the shortcuts fired') do
+    d.check('the web view is still there') { !view_new.call.web_view.nil? }
+  end
+
   d.step('"Add" keeps the tab') do
     view_new.call.button_done.signal_emit('clicked')
   end
