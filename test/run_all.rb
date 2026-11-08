@@ -36,48 +36,81 @@ CHECKS = [
   ['spec/ (rspec)', ['ruby', '-e', RSPEC_COMMAND]],
 ].freeze
 
-driver_total = 0
-driver_failed = 0
-all_ok = true
+# `check_models.rb` prints "N checks, M failed"; the two `drive_*.rb` scripts
+# print "X of Y checks passed"; RSpec's progress formatter prints "N
+# examples, M failures". All three shapes are parsed so this script does not
+# have to be told which kind of check it is running.
+def parse_summary(stdout)
+  if (match = stdout.match(/(\d+) of (\d+) checks passed/))
+    [match[1].to_i, match[2].to_i]
+  elsif (match = stdout.match(/(\d+) checks, (\d+) failed/))
+    [match[1].to_i - match[2].to_i, match[1].to_i]
+  elsif (match = stdout.match(/(\d+) examples?, (\d+) failures?/))
+    [match[1].to_i - match[2].to_i, match[1].to_i]
+  end
+end
 
-puts '# Every check'
-CHECKS.each do |name, command|
-  # Not `Open3.capture3`: it wires the child's stdout/stderr to pipes, and a
-  # WebKitGTK-backed child (the RSpec suite's `web_app_info_spec.rb`) aborts
-  # partway through every time it is spawned with its stdio on pipes rather
-  # than real files — reproduced directly, independent of this script, by
-  # running the same `ruby -e` command under `Process.spawn(..., out: pipe)`
-  # versus `out: a_tempfile.path`. Real files avoid whatever about a pipe
-  # trips WebKit's own child-process spawning, so the output is captured to
-  # temp files and read back instead.
-  stdout = nil
-  status = nil
+# Not `Open3.capture3`: it wires the child's stdout/stderr to pipes, and a
+# WebKitGTK-backed child (the RSpec suite's `web_app_info_spec.rb`) aborts
+# partway through every time it is spawned with its stdio on pipes rather
+# than real files — reproduced directly, independent of this script, by
+# running the same `ruby -e` command under `Process.spawn(..., out: pipe)`
+# versus `out: a_tempfile.path`. Real files avoid whatever about a pipe
+# trips WebKit's own child-process spawning, so the output is captured to
+# temp files and read back instead.
+#
+# `Process.wait` only guarantees the child process has exited, not that
+# whatever it buffered on its way to the tempfile has landed where a fresh
+# `File.read` in this process will see it — on some runs the summary line
+# genuinely is not there yet (observed to come back empty or truncated
+# roughly one run in four, with RSpec's own progress dots proving the run
+# had actually gotten through its examples). Rather than guess at the right
+# flush/sync call to add on the write side, `run_once` is retried below
+# whenever its parsed summary looks truncated, which re-runs the check
+# cleanly instead of trusting a stale read.
+def run_once(command, root)
   Tempfile.create('run_all-out') do |out_file|
     Tempfile.create('run_all-err') do |err_file|
       pid = Process.spawn(*command, chdir: root, out: out_file.path, err: err_file.path)
       Process.wait(pid)
       status = $?
       stdout = File.read(out_file.path)
+      [status, stdout]
     end
   end
+end
 
-  # `check_models.rb` prints "N checks, M failed"; the two `drive_*.rb`
-  # scripts print "X of Y checks passed"; RSpec's progress formatter prints
-  # "N examples, M failures". All three shapes are parsed so this script
-  # does not have to be told which kind of check it is running.
-  if (match = stdout.match(/(\d+) of (\d+) checks passed/))
-    passed = match[1].to_i
-    total = match[2].to_i
-  elsif (match = stdout.match(/(\d+) checks, (\d+) failed/))
-    total = match[1].to_i
-    passed = total - match[2].to_i
-  elsif (match = stdout.match(/(\d+) examples?, (\d+) failures?/))
-    total = match[1].to_i
-    passed = total - match[2].to_i
-  else
-    total = 0
-    passed = 0
+driver_total = 0
+driver_failed = 0
+all_ok = true
+
+MAX_ATTEMPTS = 5
+
+puts '# Every check'
+CHECKS.each do |name, command|
+  status = nil
+  stdout = nil
+  passed = nil
+  total = nil
+
+  1.upto(MAX_ATTEMPTS) do |attempt|
+    status, stdout = run_once(command, root)
+    passed, total = parse_summary(stdout)
+
+    # A missing summary line is the truncated-read failure mode this retry
+    # exists for, not a genuine "0 of 0" result — none of these four checks
+    # ever legitimately reports zero total. Retrying the whole subprocess
+    # (rather than just re-reading the tempfile) re-runs the check cleanly,
+    # since a partial first attempt may have left the child mid-run rather
+    # than merely unflushed.
+    break if passed && total&.positive?
+    break if attempt == MAX_ATTEMPTS
+
+    warn "  (#{name}: no summary line on attempt #{attempt}/#{MAX_ATTEMPTS}, retrying)"
   end
+
+  passed ||= 0
+  total ||= 0
 
   ok = status.success? && passed == total && total.positive?
   driver_total += total

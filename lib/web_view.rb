@@ -64,7 +64,7 @@ end
 # packed into — which has no counterpart here: this port loads its files with
 # plain `require_relative`, nothing is bundled, and there is no JS to serve.
 # What `data/` does hold — the app icons and `style.css` that
-# `lib/tangram/application.rb` already reads straight off disk — is served
+# `lib/application.rb` already reads straight off disk — is served
 # under the scheme instead, which is the only thing in this port a
 # `tangram-resource://` request could usefully resolve to. The commented-out
 # web inspector block in the same upstream file is dead upstream too and has
@@ -127,7 +127,7 @@ class WebView
   RESOURCE_SCHEME = 'tangram-resource'
 
   # Where a `tangram-resource://` request resolves to: the same `data/`
-  # directory `lib/tangram/application.rb` already loads the icons and
+  # directory `lib/application.rb` already loads the icons and
   # `style.css` from.
   RESOURCE_DIR = File.expand_path('../../data', __dir__)
 

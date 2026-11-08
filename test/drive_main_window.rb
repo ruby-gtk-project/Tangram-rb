@@ -25,29 +25,29 @@ require_relative 'gtk_driver'
 
 deleted = []
 
-GtkDriver.drive(Tangram::Application.new, shots: 'tmp/shots') do |d, app|
+GtkDriver.drive(Application.new, shots: 'tmp/shots') do |d, app|
   d.window { app.window.window }
 
   # Checks against `app.app`/`app.icon_theme`/`app.style_provider` directly,
-  # not through the window — `Tangram::Application`'s own job (application
+  # not through the window — `Application`'s own job (application
   # id, the three app-level accelerators `Shortcuts#build` installs, the
   # icon search path, the PULSE_PROP env vars, the CSS provider) rather than
   # anything the window merely inherits by being built under it.
   d.step('the application itself is set up') do
-    d.check('application id') { app.app.application_id == Tangram::Application::APPLICATION_ID }
+    d.check('application id') { app.app.application_id == Application::APPLICATION_ID }
     d.check('quit is bound to Ctrl+Q') { app.app.get_accels_for_action('app.quit') == ['<Control>q'] }
     d.check('shortcuts is bound to Ctrl+?') do
       app.app.get_accels_for_action('app.shortcuts') == ['<Control>question']
     end
     d.check('the icon directory is on the icon theme search path') do
-      app.icon_theme.search_path.include?(Tangram::Application::ICON_PATH)
+      app.icon_theme.search_path.include?(Application::ICON_PATH)
     end
     d.check('the PulseAudio stream properties are set') do
       ENV['PULSE_PROP_application.icon_name'] == 're.sonny.Tangram-symbolic' &&
         ENV['PULSE_PROP_media.role'] == 'video'
     end
     d.check('the style provider loaded style.css from data/') do
-      app.style_provider.is_a?(Gtk::CssProvider) && File.read(Tangram::Application::STYLE_PATH).include?('.tab-close-button')
+      app.style_provider.is_a?(Gtk::CssProvider) && File.read(Application::STYLE_PATH).include?('.tab-close-button')
     end
   end
 

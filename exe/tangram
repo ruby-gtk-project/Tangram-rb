@@ -3,4 +3,4 @@
 
 require "tangram"
 
-Tangram::Application.new.build.run
+Application.new.build.run

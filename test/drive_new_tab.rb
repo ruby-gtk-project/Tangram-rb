@@ -82,7 +82,7 @@ ADDRESS = "127.0.0.1:#{PORT}"
 # sandboxed machine that routinely takes longer than one second to settle.
 # 1000ms made "it finished loading" flake under load; 3000ms gave it margin
 # and 38/38 checks passed repeatedly.
-GtkDriver.drive(Tangram::Application.new, shots: 'tmp/shots', interval: 3000) do |d, app|
+GtkDriver.drive(Application.new, shots: 'tmp/shots', interval: 3000) do |d, app|
   d.window { app.window.window }
 
   view_new = -> { app.window.view_new }

@@ -196,10 +196,17 @@ top of this file for what changed.
    above; listed here too because it is owed work this port cannot pay
    under the current Ruby bindings (a `gobject-introspection` marshalling
    bug), not a settled decision.
-4. **Gem-path holdout.** `lib/tangram/application.rb` is the only namespaced,
-   nested file left; moving it to flat `lib/application.rb` with a top-level
-   `Application` class would match every other ported file and the pilot's
-   house shape exactly.
+4. **Resolved this round.** `lib/tangram/application.rb` was the only
+   namespaced, nested file left; it is now `lib/application.rb` with a
+   top-level `Application` class (no `Tangram` module), matching every
+   other ported file and the pilot's house shape. Every reference —
+   `lib/tangram.rb`'s `require_relative`, `exe/tangram`,
+   `test/drive_main_window.rb`, `test/drive_new_tab.rb` and the comments in
+   `lib/web_view.rb` — was updated to the new path and constant name, and
+   the gate still passes at 174/174 afterward. (Mentions of the old path in
+   this report and the other `.reports/*.md` files below are left as the
+   historical record of what each round found; they are not re-run against
+   the new layout.)
 5. **Resolved by `b73806d` ("Port metainfo.xml's release history,
    screenshot and branding"), which landed after this item was written and
    is not reflected anywhere else in this file's totals/component tables.**
